@@ -1,4 +1,4 @@
-#import "/src/lib.typ" as my-package: *
+#import "/src/lib.typ" as cnam-typst-template: *
 
 #set page(height: auto, margin: 5mm, fill: none)
 

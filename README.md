@@ -1,69 +1,149 @@
-# The `my-package` Package
-<div align="center">Version 0.1.0</div>
+# CNAM TYPST Template
 
-A short description about the project and/or client.
+A modular and organized TYPST template for creating professional documents using CNAM branding and styling.
 
-## Template adaptation checklist
+Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubble-template) and uses [CNAM](https://www.cnam.fr/)'s logo and colors.
 
-- [ ] Fill out `README.md`
-  - Change the `my-package` package name, including code snippets
-  - Check section contents and/or delete sections that don't apply
-- [ ] Check and/or replace `LICENSE` by something that suits your needs
-- [ ] Fill out `typst.toml`
-  - See also the [typst/packages README](https://github.com/typst/packages/?tab=readme-ov-file#package-format)
-- [ ] Adapt Repository URLs in `CHANGELOG.md`
-  - Consider only committing that file with your first release, or removing the "Initial Release" part in the beginning
-- [ ] Adapt or deactivate the release workflow in `.github/workflows/release.yml`
-  - to deactivate it, delete that file or remove/comment out lines 2-4 (`on:` and following)
-  - to use the workflow
-    - [ ] check the values under `env:`, particularly `REGISTRY_REPO`
-    - [ ] if you don't have one, [create a fine-grained personal access token](https://github.com/settings/tokens?type=beta) with [only Contents permission](https://stackoverflow.com/a/75116350/371191) for the `REGISTRY_REPO`
-    - [ ] on this repo, create a secret `REGISTRY_TOKEN` (at `https://github.com/[user]/[repo]/settings/secrets/actions`) that contains the so created token
-
-    if configured correctly, whenever you create a tag `v...`, your package will be pushed onto a branch on the `REGISTRY_REPO`, from which you can then create a pull request against [typst/packages](https://github.com/typst/packages/)
-- [ ] remove/replace the example test case
-- [ ] (add your actual code, docs and tests)
-- [ ] remove this section from the README
-
-## Getting Started
-
-These instructions will get you a copy of the project up and running on the typst web app. Perhaps a short code example on importing the package and a very simple teaser usage.
-
-```typ
-#import "@preview/my-package:0.1.0": *
-
-#show: my-show-rule.with()
-#my-func()
-```
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./thumbnail-dark.svg">
-  <img src="./thumbnail-light.svg">
-</picture>
-
-### Installation
-
-A step by step guide that will tell you how to get the development environment up and running. This should explain how to clone the repo and where to (maybe a link to the typst documentation on it), along with any pre-requisite software and installation steps.
+## Project Structure
 
 ```
-$ First step
-$ Another step
-$ Final step
+├── lib/               # Template library files
+│   ├── config.typ     # Main configuration and document setup
+│   ├── fonts.typ      # Centralized font configuration
+│   ├── components.typ # UI components (blockquote, my-block, code)
+│   ├── headers.typ    # Header management logic
+│   ├── layout.typ     # Document layout and styling
+│   ├── utils.typ      # Utility functions
+│   ├── colors.typ     # Color definitions
+│   └── math.typ       # Mathematical environments
+├── assets/            # Static assets (logos, images, fonts)
+├── main.typ           # Main document file
+├── lib.typ            # Main package entrypoint
+└── README.md
 ```
+
+## Features
+
+- **Modular Design**: Template split into logical, maintainable modules
+- **CNAM Branding**: Official CNAM colors and styling
+- **Centralized Font Configuration**: Global font settings for consistency
+- **Enhanced Code Blocks**: Syntax highlighting, line numbers, filename labels
+- **Rich Components**: Custom blockquotes, styled content blocks
+- **Math Support**: Mathematical definitions, theorems, examples
+- **Smart Headers**: Context-aware page headers
+- **Responsive Layout**: Professional document layout with decorative elements
 
 ## Usage
 
-A more in-depth description of usage. Any template arguments? A complicated example that showcases most if not all of the functions the package provides? This is also an excellent place to signpost the manual.
-
-```typ
-#import "@preview/my-package:0.1.0": *
-
-#let my-complicated-example = ...
+1. Import the template in your document:
+```typst
+#import "lib.typ": *
 ```
 
-## Additional Documentation and Acknowledgments
+2. Configure your document:
+```typst
+#show: conf.with(
+  title: "Your Title",
+  author: "Your Name",
+  class: "Course Name",
+  subtitle: "Subtitle",
+  logo: image("assets/cnam_logo.svg"),
+  start-date: datetime(day: 4, month: 9, year: 2024),
+  main-color: "#C4122E",
+  default-font: "New Computer Modern Math",
+  code-font: "Zed Plex Mono",
+)
+```
 
-* Project folder on server:
-* Confluence link:
-* Asana board:
-* etc...
+3. Write your content using the available components and styling.
+
+## Font Configuration
+
+The template includes centralized font management that allows you to set consistent fonts across your document:
+
+```typst
+#show: conf.with(
+  default-font: "Inter",           // Sets body text font
+  code-font: "JetBrains Mono",     // Sets code block font
+  // ... other parameters
+)
+```
+
+All code blocks and monospace text will automatically use the configured `code-font`, while body text uses the `default-font`.
+
+## Code Blocks
+
+The template provides enhanced code blocks with multiple features:
+
+### Basic Usage
+```typst
+#code(lang: "Python", ```python
+def hello_world():
+    print("Hello, World!")
+```)
+```
+
+### With Filename
+```typst
+#code(
+  filename: "main.py",
+  lang: "Python",
+  ```python
+def hello_world():
+    print("Hello, World!")
+```)
+```
+
+
+## Components
+
+### UI Components
+- `blockquote()`: Styled quote blocks with customizable colors and borders
+- `my-block()`: Custom content blocks with configurable styling
+- `code()`: Enhanced code blocks with line numbers, syntax highlighting, and filename labels
+
+### Math Components
+- `definition()`: Mathematical definitions with red styling
+- `example()`: Examples with blue styling
+- `theorem()`: Theorem blocks with purple styling
+
+### Utilities
+- `ar()`: Vector arrows in math mode
+- `icon()`: Properly sized icons
+- `date-format()`: French date formatting
+
+## Recent Updates
+
+### Code Refactoring and Cleanup (Latest)
+- **Removed unused code**: Eliminated unused `demonstration()` function and `alpha` parameter
+- **Descriptive color naming**: Renamed `color1`, `color2`, `color5` to `theorem-color`, `example-color`, `definition-color`
+- **Consistent naming conventions**: Updated all functions to use kebab-case (`get-header`, `build-main-header`, etc.)
+- **Improved documentation**: Enhanced function documentation with better descriptions and examples
+- **Cleaner imports**: Optimized import statements and removed circular dependencies
+- **Better code organization**: Consolidated related functionality and improved modularity
+
+## Previous Updates
+
+### Font Configuration System
+- Added centralized font management with `default-font` and `code-font` parameters
+- Created separate `fonts.typ` module to avoid circular dependencies
+- All components now use consistent font configuration
+
+### Enhanced Code Blocks
+- Added optional `filename` parameter for code blocks
+- Language labels now appear above code blocks instead of inline
+- Improved visual connection between filename/language labels and code content
+- Fixed font inheritance issues with proper context handling
+
+### Improved Modularity
+- Restructured imports to eliminate circular dependencies
+- Added `lib.typ` as main package entrypoint
+- Better separation of concerns across modules
+
+## Author
+
+- **Tom Planche**
+
+## License
+
+MIT
