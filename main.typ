@@ -1,5 +1,4 @@
-
-#import "src/lib.typ": *
+#import "@preview/cnam-template:1.0.0": *
 
 #show: cnam-typst-template.with(
   title: "Main Title",

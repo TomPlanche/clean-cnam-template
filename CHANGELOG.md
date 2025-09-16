@@ -94,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Dependencies
 - **Typst 1.0.0+** minimum version requirement
-- **great-theorems 0.1.1** for mathematical environments
+- **great-theorems 0.1.2** for mathematical environments
 - **headcount 0.1.0** for numbering systems
 
 #### Code Quality

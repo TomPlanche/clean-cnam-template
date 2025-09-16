@@ -11,7 +11,7 @@
  * @license MIT
  */
 
-#import "@preview/great-theorems:0.1.1": *
+#import "@preview/great-theorems:0.1.2": *
 #import "@preview/headcount:0.1.0": *
 #import "colors.typ": theorem-color, example-color, definition-color
 

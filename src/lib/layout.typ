@@ -6,7 +6,7 @@
  */
 
 #import "@preview/i-figured:0.2.4"
-#import "@preview/great-theorems:0.1.1": *
+#import "@preview/great-theorems:0.1.2": *
 #import "headers.typ": get-header
 #import "utils.typ": date-format
 
@@ -52,7 +52,7 @@
   // Typography settings
   set par(justify: true)
   set text(font: body-font, size: body-font-size)
-  
+
   // Figure customization
   set figure.caption(separator: [ --- ], position: top)
 
@@ -174,7 +174,7 @@
   v(2fr)
 
   line(length: 100%, stroke: primary-color)
-  
+
   // Title
   align(center, text(font: title-font, 2.5em, weight: 700, title))
   v(2em, weak: true)
