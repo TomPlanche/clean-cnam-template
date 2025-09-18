@@ -1,11 +1,11 @@
-#import "@preview/clean-cnam-template:1.0.0": *
+#import "src/lib.typ": *
 
-#show: cnam-typst-template.with(
+#show: clean-cnam-template.with(
   title: "Main Title",
   author: "Tom Planche",
   class: "Class name",
   subtitle: "Class subtitle",
-  logo: image("assets/cnam_logo.svg"),
+  logo: image("template/assets/cnam_logo.svg"),
   start-date: datetime(day: 7, month: 9, year: 2025),
   main-color: "#C4122E",
 )

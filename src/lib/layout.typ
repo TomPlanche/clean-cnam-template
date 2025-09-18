@@ -1,5 +1,5 @@
 /**
- * Main layout and styling configuration for the TYPST template
+ * Main layout and styling configuration for the template
  *
  * @author Tom Planche
  * @license MIT
@@ -22,6 +22,7 @@
  * @param title-font - The title/heading font family
  * @param author - The document author
  * @param color-words - Array of words to highlight with primary color
+ * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @param body - The document content
  */
 #let apply-styling(
@@ -31,6 +32,7 @@
   title-font,
   author,
   color-words,
+  show-secondary-header,
   body
 ) = {
   // Main document settings
@@ -112,7 +114,7 @@
   show outline.entry: it => text(size: 12pt, weight: "regular", it)
 
   // Set header after initial pages
-  set page(header: get-header(author: author))
+  set page(header: get-header(author: author, show-secondary-header: show-secondary-header))
 
   body
 }

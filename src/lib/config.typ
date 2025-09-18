@@ -36,9 +36,10 @@
  * @param color-words - Array of words to highlight with primary color
  * @param default-font - Default font family for body text
  * @param code-font - Font family for code blocks and monospace text
+ * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @param body - Document content
  */
-#let cnam-typst-template(
+#let clean-cnam-template(
   title: "",
   subtitle: "",
   author: "",
@@ -52,6 +53,7 @@
   color-words: (),
   default-font: "New Computer Modern Math",
   code-font: "Zed Plex Mono",
+  show-secondary-header: true,
   body,
 ) = {
   // Set global font configuration
@@ -95,6 +97,7 @@
     title-font,
     author,
     color-words,
+    show-secondary-header,
     body
   )
 }

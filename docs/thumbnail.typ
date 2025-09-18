@@ -1,4 +1,4 @@
-#import "/src/lib.typ" as cnam-typst-template: *
+#import "/src/lib.typ" as clean-cnam-template: *
 
 #set page(height: auto, margin: 5mm, fill: none)
 

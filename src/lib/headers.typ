@@ -20,21 +20,6 @@
 }
 
 /**
- * Build a secondary header with main heading, secondary heading, and author.
- *
- * @param main-heading-content - The main heading content
- * @param secondary-heading-content - The secondary heading content
- * @param author - The author name
- * @returns Header content with main heading, secondary heading, and author
- */
-#let build-secondary-header(main-heading-content, secondary-heading-content, author) = {
-  [
-    #smallcaps(main-heading-content) #h(1fr) #emph(secondary-heading-content) #h(1fr)  #emph(author)
-    #line(length: 100%)
-  ]
-}
-
-/**
  * Check if the secondary heading appears after the main heading in the document.
  *
  * @param secondary-heading - The secondary heading element
@@ -57,10 +42,12 @@
  * Generate the appropriate header based on the current page and heading context.
  *
  * @param author - The author name to display in headers
+ * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @returns The appropriate header for the current page
  */
 #let get-header(
     author: "Tom Planche",
+    show-secondary-header: true,
 ) = {
   context {
     // if we are on the first and second pages, we don't have any header
@@ -88,11 +75,10 @@
       head-it.level > 1
     })
 
-    let last-secondary-heading = if (previous-secondary-heading-array.len() != 0) {previous-secondary-heading-array.last()} else {none}
-
-    // Find if the last secondary heading exists and if it's after the last main heading
-    if (last-secondary-heading != none and is-after(last-secondary-heading, last-main-heading)) {
-      return build-secondary-header(last-main-heading.body, last-secondary-heading.body, author)
+    let last-secondary-heading = if (previous-secondary-heading-array.len() != 0) {
+        previous-secondary-heading-array.last()
+    } else {
+        none
     }
 
     return build-main-header(last-main-heading.body, author)
