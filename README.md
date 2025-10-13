@@ -42,7 +42,7 @@ Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubbl
 
 2. Configure your document:
 ```typst
-#show: conf.with(
+#show: clean-cnam-template.with(
   title: "Your Title",
   author: "Your Name",
   class: "Course Name",
@@ -70,6 +70,40 @@ The template includes centralized font management that allows you to set consist
 ```
 
 All code blocks and monospace text will automatically use the configured `code-font`, while body text uses the `default-font`.
+
+## Custom Outline
+
+The template allows you to customize or disable the table of contents (outline) on the title page:
+
+### Default Outline
+```typst
+#show: clean-cnam-template.with(
+  // ... other parameters
+  // outline-code: none,  // This is the default - standard outline
+)
+```
+
+### Custom Outline
+You can provide your own outline configuration:
+```typst
+#show: clean-cnam-template.with(
+  // ... other parameters
+  outline-code: outline(
+    title: "Table des matières",
+    depth: 2,
+    indent: auto,
+  ),
+)
+```
+
+### Disable Outline
+To disable the outline completely:
+```typst
+#show: clean-cnam-template.with(
+  // ... other parameters
+  outline-code: false,
+)
+```
 
 ## Code Blocks
 

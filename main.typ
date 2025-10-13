@@ -1,4 +1,5 @@
 #import "src/lib.typ": *
+// #import "src/your-outline-code.typ": your-outline-code
 
 #show: clean-cnam-template.with(
   title: "Main Title",
@@ -8,6 +9,7 @@
   logo: image("template/assets/cnam_logo.svg"),
   start-date: datetime(day: 7, month: 9, year: 2025),
   main-color: "#C4122E",
+  // outline-code: your-outline-code
 )
 
 = Main title

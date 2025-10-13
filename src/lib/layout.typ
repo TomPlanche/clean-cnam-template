@@ -148,6 +148,7 @@
  * @param primary-color - The primary theme color
  * @param title-font - The font for titles
  * @param logo - Optional logo to display
+ * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
  */
 #let create-title-page(
   title,
@@ -160,7 +161,8 @@
   year,
   primary-color,
   title-font,
-  logo
+  logo,
+  outline-code
 ) = {
   // Logo placement
   if logo != none {
@@ -229,6 +231,16 @@
   )
 
   pagebreak()
-  outline()
+
+  // Conditional outline rendering
+  if outline-code == none {
+    // Default outline
+    outline()
+  } else if outline-code != false {
+    // Custom outline code provided by user
+    outline-code
+  }
+  // If outline-code == false, no outline is rendered
+
   pagebreak()
 }

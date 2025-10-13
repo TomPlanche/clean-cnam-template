@@ -37,6 +37,7 @@
  * @param default-font - Default font family for body text
  * @param code-font - Font family for code blocks and monospace text
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
+ * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
  * @param body - Document content
  */
 #let clean-cnam-template(
@@ -54,6 +55,7 @@
   default-font: "New Computer Modern Math",
   code-font: "Zed Plex Mono",
   show-secondary-header: true,
+  outline-code: none,
   body,
 ) = {
   // Set global font configuration
@@ -86,7 +88,8 @@
     year,
     primary-color,
     title-font,
-    logo
+    logo,
+    outline-code
   )
 
   // Apply main styling and render body content
