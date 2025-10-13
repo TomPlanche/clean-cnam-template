@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Custom outline support** with `outline-code` parameter in `clean-cnam-template()`
+  - Pass `none` (default) for standard outline
+  - Pass `false` to disable outline completely
+  - Pass custom outline code (e.g., `outline(title: "Table des matières", depth: 2)`) for customization
+- **Documentation examples** for outline customization in README.md
+- **Usage comments** in main.typ demonstrating all outline options
+
+### Changed
+- **Enhanced flexibility** of title page generation to support custom outline configurations
+
 ## [1.0.0] - 2024-09-15
 
 ### Added
