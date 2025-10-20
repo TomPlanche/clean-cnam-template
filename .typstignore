@@ -8,9 +8,13 @@
 # .git and .typstignore are excluded automatically
 
 .github
-scripts
-tests
+.typstignore
 Justfile
-# PDF manuals should be included so that they can be linked, but not their sources
 docs/*
 !docs/*.pdf
+main.pdf
+main.typ
+scripts
+tests
+thumbnail.png
+thumbnail.svg
