@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-10-20
+
+### Added
+
+#### Enhanced Component Customization
+- **Blockquote enhancements** with extensive customization options:
+  - `border-side` parameter: choose left, right, top, bottom, or all borders
+  - `attribution` parameter: add source/author attribution to quotes
+  - `attribution-align` parameter: align attribution (left, center, right)
+  - `attribution-style` parameter: customize attribution text styling (size, weight, fill, style)
+  - `attribution-inset` parameter: control attribution spacing
+  - `block-align` parameter: align the entire block (left, center, right)
+  - `content-align` parameter: align content inside the block (left, center, right)
+  - `width` parameter: control block width (auto, 100%, or custom length)
+  - Dynamic radius adjustment based on border side
+  - Support for full border styling with all sides
+
+- **my-block component enhancements** with title and alignment support:
+  - `title` parameter: optional title at the top of the block
+  - `title-align` parameter: align title (left, center, right)
+  - `title-style` parameter: customize title styling (size, weight, fill)
+  - `title-inset` parameter: control spacing around the title
+  - `block-align` parameter: align the entire block (left, center, right)
+  - `content-align` parameter: align content inside the block (left, center, right)
+  - `width` parameter: control block width (auto, 100%, or custom length)
+
+- **Code component enhancements** with advanced display options:
+  - `title` parameter: optional title/caption above the code block
+  - `title-align` parameter: align title (left, center, right)
+  - `title-style` parameter: customize title styling (size, weight, fill)
+  - `title-inset` parameter: control spacing around the title
+  - `block-align` parameter: align the entire block (left, center, right)
+  - `number-style` parameter: customize line number styling (size, fill, weight)
+  - Enhanced text styling with `fill` color support
+  - Improved language label positioning with better width handling
+
+- **Math components enhancements**:
+  - Full customization support for `definition`, `example`, and `theorem`
+  - All parameters now configurable: fill, stroke, radius, inset, numbering, breakable
+  - Comprehensive JSDoc documentation with usage examples
+  - Consistent theming with extensible color options
+
+#### Documentation Improvements
+- **Comprehensive showcase document** in `main.typ` demonstrating:
+  - All component customization options
+  - Multiple styling examples for each component
+  - Real-world usage patterns
+  - Color customization examples
+  - Layout and alignment options
+- **Enhanced JSDoc documentation** with detailed usage examples for all components
+- **Parameter descriptions** with default values and type information
+
+### Changed
+- **Improved component API consistency** across all components
+- **Better default styling** with refined color choices
+- **Enhanced type safety** in parameter handling
+- **Refined layout calculations** for better responsive behavior
+- **Package version** updated to 1.2.0 in `typst.toml`
+
+### Fixed
+- **Code block width handling** for proper alignment with title and language label
+- **Border radius calculations** now adapt to border-side selection
+- **Attribution spacing** in blockquotes for better visual hierarchy
+- **Title spacing** in all components for consistent appearance
+
+## [1.1.0] - 2025-10-19
+
 ### Added
 - **Custom outline support** with `outline-code` parameter in `clean-cnam-template()`
   - Pass `none` (default) for standard outline
