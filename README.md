@@ -26,8 +26,8 @@ This template uses the following external packages:
 │   │   └── math.typ       # Mathematical environments
 │   └── lib.typ            # Main package entrypoint (local import)
 ├── template/
-│   └── assets/            # Static assets (logos, images, fonts)
-│       └── cnam_logo.svg
+│   └── assets/            # Static assets (logos, images)
+│       └── cnam_logo.svg  # CNAM logo
 ├── main.typ               # Example document using the published package
 └── README.md
 ```
@@ -70,7 +70,7 @@ This template uses the following external packages:
   // If using this repo locally, you can use the provided logo path
   logo: image("template/assets/cnam_logo.svg"),
   start-date: datetime(day: 4, month: 9, year: 2024),
-  main-color: "#C4122E",
+  main-color: "#C4122E",  // Custom color (default is "E94845")
   default-font: "New Computer Modern Math",
   code-font: "Zed Plex Mono",
 )
