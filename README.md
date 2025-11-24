@@ -9,6 +9,7 @@ Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubbl
 This template uses the following external packages:
 - `@preview/great-theorems:0.1.2` - Mathematical theorem environments
 - `@preview/headcount:0.1.0` - Counter management
+- `@preview/hydra:0.6.2` - Intelligent page headers with section awareness
 - `@preview/i-figured:0.2.4` - Figure and equation numbering
 
 ## Project Structure
@@ -51,7 +52,7 @@ This template uses the following external packages:
 
    - Using the published package (as in `main.typ`):
    ```typst
-   #import "@preview/clean-cnam-template:1.1.0": *
+   #import "@preview/clean-cnam-template:1.3.0": *
    ```
 
    - Using this repository locally (from `src/`):
@@ -343,13 +344,17 @@ Formats a datetime object to French format (DD/MM/YYYY).
 
 ## Recent Updates
 
-### Code Refactoring and Cleanup (Latest)
-- **Removed unused code**: Eliminated unused `demonstration()` function and `alpha` parameter
-- **Descriptive color naming**: Renamed `color1`, `color2`, `color5` to `theorem-color`, `example-color`, `definition-color`
-- **Consistent naming conventions**: Updated all functions to use kebab-case (`get-header`, `build-main-header`, etc.)
-- **Improved documentation**: Enhanced function documentation with better descriptions and examples
-- **Cleaner imports**: Optimized import statements and removed circular dependencies
-- **Better code organization**: Consolidated related functionality and improved modularity
+### v1.3.0 - Header and Heading Improvements (Latest)
+- **New header system**: Integrated hydra for intelligent section-aware page headers
+- **Enhanced chapter styling**: Redesigned level 1 headings with centered layout, "Chapter N" prefix, and decorative lines
+- **Fixed heading numbering**: Sub-headings now only display their relevant numbers (e.g., "I -" instead of "III I -")
+- **New utility**: Added `thin_line` for consistent decorative elements
+
+### v1.2.0 - Component Customization
+- **Blockquote enhancements**: Border side selection, attribution support, alignment options
+- **my-block improvements**: Title support, flexible alignment, width control
+- **Code component updates**: Title parameter, enhanced styling options
+- **Math components**: Full customization for definition, example, and theorem blocks
 
 ## Previous Updates
 

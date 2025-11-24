@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-11-24
+
+### Added
+
+#### New Header System
+- **Hydra-based page headers**: Integrated `@preview/hydra:0.6.2` for intelligent section-aware headers
+  - Displays current section number and title in the header
+  - Decorative line below header with primary color
+  - Automatically hides on chapter start pages
+
+#### Enhanced Chapter Styling
+- **New level 1 heading design**: Completely redesigned chapter headings
+  - Centered layout with "Chapter N" prefix
+  - Decorative thin lines above and below the title
+  - Automatic page break before each chapter
+  - Larger title text (1.5em)
+
+#### Utility Additions
+- **`thin_line` utility**: New decorative line element for consistent styling across the document
+
+### Changed
+- **Heading numbering system**: Refactored to only display relevant numbers per heading level
+  - Level 2 headings now show only their section number (e.g., "I -" instead of "III I -")
+  - Level 3 and 4 headings properly display parent-child relationships
+  - Cleaner, more readable heading hierarchy
+
+### Fixed
+- **Heading number display**: Fixed issue where parent chapter numbers appeared in sub-heading numbering
+
 ## [1.2.0] - 2025-10-20
 
 ### Added

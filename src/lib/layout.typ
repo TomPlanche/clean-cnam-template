@@ -7,8 +7,9 @@
 
 #import "@preview/i-figured:0.2.4"
 #import "@preview/great-theorems:0.1.2": *
+#import "@preview/hydra:0.6.2": hydra
 #import "headers.typ": get-header
-#import "utils.typ": date-format
+#import "utils.typ": date-format, thin_line
 
 // Global font size setting
 #let body-font-size = 12pt
@@ -48,6 +49,32 @@
     margin: page-margin,
     numbering: "1 / 1",
     number-align: bottom + right,
+
+    header: context [
+      #let chapters = query(
+      heading.where(
+        level: 1
+      ))
+      #let show_line = true
+      #let cur_page = counter(page).at(here())
+      #for chapter in chapters [
+        #let loc = chapter.location()
+
+        #if counter(page).at(loc) == cur_page {
+          show_line = false
+        }
+      ]
+
+      #hydra(2, display: (_, it) => {
+        set align(right)
+        numbering(it.numbering, ..counter(heading).at(it.location()))
+        [.] + h(0.3cm) + it.body
+
+        v(-0.3cm)
+
+        line(length: 100%, stroke: 0.5pt + primary-color)
+      })
+    ]
   )
 
   show: great-theorems-init
@@ -66,23 +93,40 @@
   set heading(numbering: (..nums) => {
     let level = nums.pos().len()
 
-    let pattern = if level == 1 {
-      "I -"
+    if level == 1 {
+      numbering("I -", ..nums)
     } else if level == 2 {
-      "  I. I -"
+      numbering("  I -", nums.pos().last())
     } else if level == 3 {
-      "    I. I .I -"
+      numbering("    I.I -", nums.pos().at(1), nums.pos().last())
     } else if level == 4 {
-      "     I. I. I. 1 -"
-    }
-
-    if pattern != none {
-      numbering(pattern, ..nums)
+      numbering("     I.I.1 -", nums.pos().at(1), nums.pos().at(2), nums.pos().last())
     }
   })
 
   // Heading spacing
   show heading: it => it + v(.5em)
+  show heading: it => {
+    if it.level == 1 [
+      #set align(center)
+      #set block(spacing: 0.6cm)
+
+      #pagebreak(weak: true)
+      #context {
+        if heading.numbering != none  [
+          #let heading_num = counter(heading).at(here()).at(0)
+          Chapter #heading_num
+        ]
+      }
+
+      #thin_line
+      #text(size: 1.5em)[#it.body]
+      #thin_line
+    ] else [
+      #set text(size: 1.2em)
+      #it
+    ]
+  }
 
   // Link styling
   show link: it => underline(text(fill: primary-color, it))
@@ -116,7 +160,7 @@
 
   // Set header after initial pages
   set page(
-      header: get-header(author: author,show-secondary-header: show-secondary-header),
+      // header: get-header(author: author,show-secondary-header: show-secondary-header),
       margin: page-margin
   )
 
