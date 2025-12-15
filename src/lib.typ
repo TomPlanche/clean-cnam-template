@@ -17,3 +17,7 @@
 #import "lib/utils.typ": *
 #import "lib/colors.typ": *
 #import "lib/math.typ": *
+
+// Re-export linguify for user access
+#import "@preview/linguify:0.4.2": linguify
+#import "lib/layout.typ": translations-database

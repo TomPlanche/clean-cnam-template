@@ -37,6 +37,7 @@
  * @param default-font - Default font family for body text
  * @param code-font - Font family for code blocks and monospace text
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
+ * @param language - Language code ("fr" for French, "en" for English)
  * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
  * @param body - Document content
  */
@@ -55,6 +56,7 @@
   default-font: "New Computer Modern Math",
   code-font: "Zed Plex Mono",
   show-secondary-header: true,
+  language: "fr",
   outline-code: none,
   body,
 ) = {
@@ -71,7 +73,7 @@
 
   // Document metadata
   set document(author: author, title: title)
-  set text(lang: "fr")
+  set text(lang: language)
 
   // Apply page margins before decorations
   set page(margin: page-margin)
@@ -104,6 +106,7 @@
     author,
     color-words,
     show-secondary-header,
+    language,
     body
   )
 }

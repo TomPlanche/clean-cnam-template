@@ -47,4 +47,10 @@
  */
 #let ar = name => $accent(#name, harpoon)$
 
-#let thinLine = line(length: 100%, stroke: 0.6pt)
+/**
+ * Create a thin horizontal line with specified color.
+ *
+ * @param color - The color for the line
+ * @returns A thin horizontal line element
+ */
+#let thinLine = (color) => line(length: 100%, stroke: 0.6pt + color)

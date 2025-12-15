@@ -8,8 +8,24 @@
 #import "@preview/i-figured:0.2.4"
 #import "@preview/great-theorems:0.1.2": *
 #import "@preview/hydra:0.6.2": hydra
+#import "@preview/linguify:0.4.2": linguify
 #import "headers.typ": get-header
 #import "utils.typ": date-format, thinLine
+
+// Translations database for linguify
+#let translations-database = (
+  conf: (
+    default-lang: "fr",
+  ),
+  lang: (
+    fr: (
+      chapter: "Chapitre",
+    ),
+    en: (
+      chapter: "Chapter",
+    ),
+  ),
+)
 
 // Global font size setting
 #let body-font-size = 12pt
@@ -30,6 +46,7 @@
  * @param author - The document author
  * @param color-words - Array of words to highlight with primary color
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
+ * @param language - Language code ("fr" for French, "en" for English)
  * @param body - The document content
  */
 #let apply-styling(
@@ -40,6 +57,7 @@
   author,
   color-words,
   show-secondary-header,
+  language,
   body
 ) = {
   // Main document settings
@@ -115,13 +133,13 @@
       #context {
         if heading.numbering != none  [
           #let heading_num = counter(heading).at(here()).at(0)
-          Chapter #heading_num
+          #linguify("chapter", from: translations-database) #heading_num
         ]
       }
 
-      #thinLine
+      #thinLine(primary-color)
       #text(size: 1.5em)[#it.body]
-      #thinLine
+      #thinLine(primary-color)
     ] else [
       #set text(size: 1.2em)
       #it
@@ -232,8 +250,10 @@
   v(2em, weak: true)
 
   // Subtitle
-  align(center, text(font: title-font, 2em, weight: 700, subtitle))
-  v(2em, weak: true)
+  if subtitle != none and subtitle != "" {
+    align(center, text(font: title-font, 2em, weight: 700, subtitle))
+    v(2em, weak: true)
+  }
 
   // Date
   align(
