@@ -7,16 +7,19 @@
 
 // Global font configuration state
 #let _fonts = state("fonts", (
-  default: "New Computer Modern Math",
-  code: "Zed Plex Mono"
+  default: (name: "New Computer Modern Math", weight: 400),
+  code: (name: "Zed Plex Mono", weight: 400)
 ))
 
 /**
  * Set global font configuration
- * @param default-font - Default font family
- * @param code-font - Code font family
+ * @param default-font - Default font object (name, weight)
+ * @param code-font - Code font object (name, weight)
  */
-#let set-fonts(default-font: "New Computer Modern Math", code-font: "Zed Plex Mono") = {
+#let set-fonts(
+  default-font: (name: "New Computer Modern Math", weight: 400),
+  code-font: (name: "Zed Plex Mono", weight: 400)
+) = {
   _fonts.update((
     default: default-font,
     code: code-font

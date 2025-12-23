@@ -72,8 +72,8 @@ This template uses the following external packages:
   logo: image("template/assets/cnam_logo.svg"),
   start-date: datetime(day: 4, month: 9, year: 2024),
   main-color: "#C4122E",  // Custom color (default is "E94845")
-  default-font: "New Computer Modern Math",
-  code-font: "Zed Plex Mono",
+  default-font: (name: "New Computer Modern Math", weight: 400),
+  code-font: (name: "Zed Plex Mono", weight: 400),
 )
 ```
 
@@ -96,8 +96,10 @@ The `clean-cnam-template` function accepts the following parameters:
 | `logo` | image/none | `none` | Logo image to display |
 | `main-color` | string | `"E94845"` | Primary color (hex string) |
 | `color-words` | array | `()` | Words to highlight with primary color |
-| `default-font` | string | `"New Computer Modern Math"` | Body text font |
-| `code-font` | string | `"Zed Plex Mono"` | Code block font |
+| `default-font` | object | `(name: "New Computer Modern Math", weight: 400)` | Default font object (fallback for body and title fonts) |
+| `body-font` | object/none | `none` | Body text font object (defaults to `default-font`) |
+| `title-font` | object/none | `none` | Title and heading font object (defaults to `default-font`) |
+| `code-font` | object | `(name: "Zed Plex Mono", weight: 400)` | Code block font object |
 | `show-secondary-header` | bool | `true` | Show secondary headers |
 | `outline-code` | content/bool/none | `none` | Custom outline configuration |
 
@@ -105,17 +107,29 @@ The `clean-cnam-template` function accepts the following parameters:
 
 ### Font Configuration
 
-The template includes centralized font management that allows you to set consistent fonts across your document:
+The template includes centralized font management that allows you to set consistent fonts across your document. Fonts are specified as objects with `name` and `weight` properties:
 
 ```typst
 #show: clean-cnam-template.with(
-  default-font: "Inter",           // Sets body text font
-  code-font: "JetBrains Mono",     // Sets code block font
+  default-font: (name: "Inter", weight: 400),              // Sets default font (fallback for body and title)
+  body-font: (name: "Inter", weight: 400),                 // Optional: body text font (defaults to default-font)
+  title-font: (name: "Inter Display", weight: 600),        // Optional: title font (defaults to default-font)
+  code-font: (name: "JetBrains Mono", weight: 400),        // Sets code block font
   // ... other parameters
 )
 ```
 
-All code blocks and monospace text will automatically use the configured `code-font`, while body text uses the `default-font`.
+Font Object Structure:
+- `name`: The font family name (string)
+- `weight`: The font weight (integer: 100-900, or string: "regular", "bold", etc.)
+
+The template uses a hierarchical font system:
+- `default-font` serves as the base font object for the document
+- `body-font` is used for body text and defaults to `default-font` if not specified
+- `title-font` is used for titles and headings and defaults to `default-font` if not specified
+- `code-font` is used for all code blocks and monospace text
+
+This allows you to use different fonts and weights for body text and headings while maintaining a fallback to `default-font`.
 
 ### Color Highlighting
 

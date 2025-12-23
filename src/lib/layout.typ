@@ -99,13 +99,13 @@
 
   // Typography settings
   set par(justify: true)
-  set text(font: body-font, size: body-font-size)
+  set text(font: body-font.name, weight: body-font.weight, size: body-font-size)
 
   // Figure customization
   set figure.caption(separator: [ --- ], position: top)
 
   // Headings styling
-  show heading: set text(font: title-font, fill: primary-color)
+  show heading: set text(font: title-font.name, weight: title-font.weight, fill: primary-color)
 
   // Heading numbering
   set heading(numbering: (..nums) => {
@@ -129,7 +129,7 @@
       #set align(center)
       #set block(spacing: 0.6cm)
 
-      #pagebreak(weak: true)
+      #pagebreak(weak: false)
       #context {
         if heading.numbering != none  [
           #let heading_num = counter(heading).at(here()).at(0)
@@ -213,6 +213,7 @@
  * @param year - The year for school year calculation
  * @param primary-color - The primary theme color
  * @param title-font - The font for titles
+ * @param body-font - The font for body text
  * @param logo - Optional logo to display
  * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
  */
@@ -227,6 +228,7 @@
   year,
   primary-color,
   title-font,
+  body-font,
   logo,
   outline-code
 ) = {
@@ -246,19 +248,19 @@
   line(length: 100%, stroke: primary-color)
 
   // Title
-  align(center, text(font: title-font, 2.5em, weight: 700, title))
+  align(center, text(font: title-font.name, 2.5em, weight: 700, title))
   v(2em, weak: true)
 
   // Subtitle
   if subtitle != none and subtitle != "" {
-    align(center, text(font: title-font, 2em, weight: 700, subtitle))
+    align(center, text(font: title-font.name, 2em, weight: 700, subtitle))
     v(2em, weak: true)
   }
 
   // Date
   align(
       center,
-      text(1.1em,
+      text(font: body-font.name, weight: body-font.weight, 1.1em,
         if start-date == last-updated-date {
           date-format(start-date)
         } else {
@@ -276,6 +278,8 @@
   let next-year = str(school-year + 1)
 
   let bottom-text = text(
+    font: body-font.name,
+    weight: "bold",
     author + "\n" +
     if (affiliation != "") {
       affiliation + "\n"
@@ -283,9 +287,10 @@
       ""
     },
     14pt,
-    weight: "bold"
   ) + if (class != "") {
     text(
+      font: body-font.name,
+      weight: body-font.weight,
       str(school-year) + "-" + str(next-year) + "\n" + emph[#class],
       14pt)
   }
@@ -310,5 +315,4 @@
   }
   // If outline-code == false, no outline is rendered
 
-  pagebreak()
 }

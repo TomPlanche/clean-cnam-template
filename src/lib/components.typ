@@ -412,7 +412,7 @@
 
   context {
     let fonts = get-fonts()
-    let final-text-style = (..text-style, font: fonts.code)
+    let final-text-style = (..text-style, font: fonts.code.name, weight: fonts.code.weight)
 
     // Apply text styling to raw content
     show raw.line: set text(..final-text-style)
