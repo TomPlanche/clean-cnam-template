@@ -174,6 +174,7 @@
   show raw.where(block: false) : it => h(side-padding) + box(fill: primary-color.lighten(90%), outset: (x: .25em, y: .5em), radius: 2pt, it) + h(side-padding)
 
   // Outline styling
+  set outline(indent: n => n * 0.5em)
   show outline.entry: it => text(size: 12pt, weight: "regular", it)
 
   // Set header after initial pages
@@ -258,23 +259,25 @@
   }
 
   // Date
-  align(
-      center,
-      text(font: body-font.name, weight: body-font.weight, 1.1em,
-        if start-date == last-updated-date {
-          date-format(start-date)
-        } else {
-          date-format(start-date) + " - " + date-format(last-updated-date)
-        }
-      )
-  )
-  v(2em, weak: true)
+  if start-date != none {
+    align(
+        center,
+        text(font: body-font.name, weight: body-font.weight, 1.1em,
+          if start-date == last-updated-date {
+            date-format(start-date)
+          } else {
+            date-format(start-date) + " - " + date-format(last-updated-date)
+          }
+        )
+    )
+    v(2em, weak: true)
+  }
   line(length: 100%, stroke: primary-color)
 
   v(2fr)
 
   // Author information
-  let school-year = if start-date.month() < 9 { int(year) - 1 } else { int(year) }
+  let school-year = if start-date != none and start-date.month() < 9 { int(year) - 1 } else { int(year) }
   let next-year = str(school-year + 1)
 
   let bottom-text = text(
@@ -307,8 +310,8 @@
 
   // Conditional outline rendering
   if outline-code == none {
-    // Default outline
-    outline()
+    // Default outline with reduced indent
+    outline(indent: n => n * 0.5em)
   } else if outline-code != false {
     // Custom outline code provided by user
     outline-code

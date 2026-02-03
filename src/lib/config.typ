@@ -29,7 +29,7 @@
  * @param affiliation - Author's affiliation/institution
  * @param year - Year for school year calculation
  * @param class - Class/course name
- * @param start-date - Document start date
+ * @param start-date - Document start date (use none to hide the date)
  * @param last-updated-date - Last updated date
  * @param logo - Logo image to display
  * @param main-color - Primary color for the theme (hex string)
