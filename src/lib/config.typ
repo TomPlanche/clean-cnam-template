@@ -25,7 +25,7 @@
  *
  * @param title - Document title
  * @param subtitle - Document subtitle
- * @param author - Author name
+ * @param author - Author name (string) or list of authors (array of strings)
  * @param affiliation - Author's affiliation/institution
  * @param year - Year for school year calculation
  * @param class - Class/course name
@@ -41,6 +41,13 @@
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @param language - Language code ("fr" for French, "en" for English)
  * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
+ * @param cover - Cover page configuration dictionary with keys:
+ *   bg: page background color (none = transparent)
+ *   decorations: toggle decorative circles (true/false)
+ *   title: dict with color, weight, size, font (auto = primary-color / title-font.name)
+ *   subtitle: dict with color, weight, size, font (auto = title color / title-font.name)
+ *   date: dict with color, weight, size, font (auto = title color / body-font)
+ *   author: dict with color, weight, size, font (auto = title color / body-font)
  * @param body - Document content
  */
 #let clean-cnam-template(
@@ -62,6 +69,7 @@
   show-secondary-header: true,
   language: "fr",
   outline-code: none,
+  cover: (:),
   body,
 ) = {
   // Set global font configuration
@@ -75,21 +83,96 @@
   let primary-color = rgb(main-color)
   let secondary-color = primary-color.lighten(30%)
 
+  // Cover page configuration - deep merge with defaults
+  let default-cover = (
+    bg: none,
+    decorations: true,
+    padding: 1em,
+    spacing: 1em,
+    title: (
+      color: auto,
+      weight: 700,
+      size: 2.5em,
+      font: auto,
+    ),
+    subtitle: (
+      color: auto,
+      weight: 700,
+      size: 2em,
+      font: auto,
+    ),
+    date: (
+      color: auto,
+      weight: auto,
+      size: 1.1em,
+      font: auto,
+      range: true,
+    ),
+    author: (
+      color: auto,
+      weight: "bold",
+      size: 14pt,
+      font: auto,
+    ),
+  )
+
+  let final-cover = default-cover + cover
+  for key in ("title", "subtitle", "date", "author") {
+    if key in cover {
+      final-cover.insert(key, default-cover.at(key) + cover.at(key))
+    }
+  }
+
+  // Resolve auto values (title first, others cascade from title)
+  if final-cover.title.color == auto {
+    final-cover.title.color = primary-color
+  }
+  if final-cover.title.font == auto {
+    final-cover.title.font = title-font.name
+  }
+  if final-cover.subtitle.color == auto {
+    final-cover.subtitle.color = final-cover.title.color
+  }
+  if final-cover.subtitle.font == auto {
+    final-cover.subtitle.font = title-font.name
+  }
+  if final-cover.date.color == auto {
+    final-cover.date.color = final-cover.title.color
+  }
+  if final-cover.date.weight == auto {
+    final-cover.date.weight = body-font.weight
+  }
+  if final-cover.date.font == auto {
+    final-cover.date.font = body-font.name
+  }
+  if final-cover.author.color == auto {
+    final-cover.author.color = final-cover.title.color
+  }
+  if final-cover.author.font == auto {
+    final-cover.author.font = body-font.name
+  }
+
+  // Normalize author to array and create display string
+  let author-list = if type(author) == str { (author,) } else { author }
+  let author-display = author-list.join("\n")
+
   // Document metadata
-  set document(author: author, title: title)
+  set document(author: author-list, title: title)
   set text(lang: language)
 
-  // Apply page margins before decorations
-  set page(margin: page-margin)
+  // Apply page margins and cover background (none = transparent, the default)
+  set page(margin: page-margin, fill: final-cover.bg)
 
-  // Add decorative elements
-  add-decorations(primary-color, secondary-color)
+  // Conditionally add decorative elements
+  if final-cover.decorations {
+    add-decorations(primary-color, secondary-color)
+  }
 
   // Create title page
   create-title-page(
     title,
     subtitle,
-    author,
+    author-display,
     affiliation,
     class,
     start-date,
@@ -99,7 +182,8 @@
     title-font,
     body-font,
     logo,
-    outline-code
+    outline-code,
+    final-cover,
   )
 
   // Apply main styling and render body content
@@ -108,7 +192,7 @@
     secondary-color,
     body-font,
     title-font,
-    author,
+    author-display,
     color-words,
     show-secondary-header,
     language,

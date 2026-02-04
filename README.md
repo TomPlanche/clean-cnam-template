@@ -102,8 +102,86 @@ The `clean-cnam-template` function accepts the following parameters:
 | `code-font` | object | `(name: "Zed Plex Mono", weight: 400)` | Code block font object |
 | `show-secondary-header` | bool | `true` | Show secondary headers |
 | `outline-code` | content/bool/none | `none` | Custom outline configuration |
+| `cover` | dictionary | `(:)` | Cover page configuration (see [Cover Page](#cover-page-customization)) |
 
 ## Advanced Configuration
+
+### Cover Page Customization
+
+The `cover` parameter lets you control the cover page background, decorative circles, and text styling for every element. You only need to specify the keys you want to override -- all others fall back to defaults.
+
+#### Cover Dictionary Structure
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `bg` | color/none | `none` | Page background color (`none` = transparent) |
+| `decorations` | bool | `true` | Show decorative circles on the cover page |
+| `padding` | length | `1em` | Space between the horizontal lines and the content |
+| `spacing` | length | `1em` | Space between elements (title, subtitle, date) |
+| `title` | dictionary | see below | Title text configuration |
+| `subtitle` | dictionary | see below | Subtitle text configuration |
+| `date` | dictionary | see below | Date text configuration |
+| `author` | dictionary | see below | Author/affiliation text configuration |
+
+#### Element Dictionaries
+
+All four element dictionaries (`title`, `subtitle`, `date`, `author`) share these keys:
+
+| Key | Type | title | subtitle | date | author |
+|-----|------|-------|----------|------|--------|
+| `color` | color/auto | `auto` (`main-color`) | `auto` (title color) | `auto` (title color) | `auto` (title color) |
+| `weight` | int/string/auto | `700` | `700` | `auto` (`body-font` weight) | `"bold"` |
+| `size` | length | `2.5em` | `2em` | `1.1em` | `14pt` |
+| `font` | string/auto | `auto` (`title-font`) | `auto` (`title-font`) | `auto` (`body-font`) | `auto` (`body-font`) |
+
+The `date` dictionary also accepts:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `range` | bool | `true` | Show date range (`start-date - last-updated-date`). When `false`, only `start-date` is shown. |
+
+All `auto` color values cascade from the title color. Setting `cover: (title: (color: white))` makes every element white unless individually overridden. The horizontal lines also follow the title color.
+
+#### Examples
+
+Override only the background:
+
+```typst
+#show: clean-cnam-template.with(
+  // ... other parameters
+  cover: (bg: rgb("#1a1a2e")),
+)
+```
+
+Dark background with white text and no decorative circles:
+
+```typst
+#show: clean-cnam-template.with(
+  // ... other parameters
+  cover: (
+    bg: rgb("#1a1a2e"),
+    decorations: false,
+    title: (color: white, size: 3em),
+    subtitle: (color: rgb("#cccccc")),
+  ),
+)
+```
+
+Custom fonts and sizes while keeping default colors:
+
+```typst
+#show: clean-cnam-template.with(
+  // ... other parameters
+  cover: (
+    title: (font: "Inter Display", weight: 800, size: 3em),
+    subtitle: (font: "Inter", weight: 400, size: 1.5em),
+  ),
+)
+```
+
+Partial overrides work at every level. For example, `cover: (title: (size: 3em))` only changes the title size -- color, weight, and font keep their defaults.
+
+The title color cascades: setting `cover: (title: (color: white))` also applies white to the subtitle and the horizontal lines, unless the subtitle explicitly overrides its own color.
 
 ### Font Configuration
 

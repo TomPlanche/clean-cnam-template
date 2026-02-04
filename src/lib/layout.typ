@@ -62,6 +62,7 @@
 ) = {
   // Main document settings
   set page(
+    fill: none,
     header-ascent: 50%,
     footer-descent: 50%,
     margin: page-margin,
@@ -217,6 +218,7 @@
  * @param body-font - The font for body text
  * @param logo - Optional logo to display
  * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
+ * @param cover - Resolved cover configuration dict with title/subtitle styling
  */
 #let create-title-page(
   title,
@@ -231,7 +233,8 @@
   title-font,
   body-font,
   logo,
-  outline-code
+  outline-code,
+  cover,
 ) = {
   // Logo placement
   if logo != none {
@@ -246,33 +249,42 @@
 
   v(2fr)
 
-  line(length: 100%, stroke: primary-color)
+  line(length: 100%, stroke: cover.title.color)
 
-  // Title
-  align(center, text(font: title-font.name, 2.5em, weight: 700, title))
-  v(2em, weak: true)
+  {
+    set block(spacing: 0pt)
+    set par(spacing: 0pt)
 
-  // Subtitle
-  if subtitle != none and subtitle != "" {
-    align(center, text(font: title-font.name, 2em, weight: 700, subtitle))
-    v(2em, weak: true)
+    v(cover.padding)
+
+    // Title
+    align(center, text(font: cover.title.font, cover.title.size, weight: cover.title.weight, fill: cover.title.color, title))
+
+    // Subtitle
+    if subtitle != none and subtitle != "" {
+      v(cover.spacing)
+      align(center, text(font: cover.subtitle.font, cover.subtitle.size, weight: cover.subtitle.weight, fill: cover.subtitle.color, subtitle))
+    }
+
+    // Date
+    if start-date != none {
+      v(cover.spacing)
+      align(
+          center,
+          text(font: cover.date.font, weight: cover.date.weight, cover.date.size, fill: cover.date.color,
+            if not cover.date.range or start-date == last-updated-date {
+              date-format(start-date)
+            } else {
+              date-format(start-date) + " - " + date-format(last-updated-date)
+            }
+          )
+      )
+    }
+
+    v(cover.padding)
   }
 
-  // Date
-  if start-date != none {
-    align(
-        center,
-        text(font: body-font.name, weight: body-font.weight, 1.1em,
-          if start-date == last-updated-date {
-            date-format(start-date)
-          } else {
-            date-format(start-date) + " - " + date-format(last-updated-date)
-          }
-        )
-    )
-    v(2em, weak: true)
-  }
-  line(length: 100%, stroke: primary-color)
+  line(length: 100%, stroke: cover.title.color)
 
   v(2fr)
 
@@ -281,21 +293,23 @@
   let next-year = str(school-year + 1)
 
   let bottom-text = text(
-    font: body-font.name,
-    weight: "bold",
+    font: cover.author.font,
+    weight: cover.author.weight,
+    fill: cover.author.color,
     author + "\n" +
     if (affiliation != "") {
       affiliation + "\n"
     } else {
       ""
     },
-    14pt,
+    cover.author.size,
   ) + if (class != "") {
     text(
-      font: body-font.name,
+      font: cover.author.font,
       weight: body-font.weight,
-      str(school-year) + "-" + str(next-year) + "\n" + emph[#class],
-      14pt)
+      fill: cover.author.color,
+      if cover.date.range { str(school-year) + "-" + str(next-year) } else { str(school-year) } + "\n" + emph[#class],
+      cover.author.size)
   }
 
   place(
@@ -307,6 +321,9 @@
   )
 
   pagebreak()
+
+  // Reset cover background for subsequent pages
+  set page(fill: none)
 
   // Conditional outline rendering
   if outline-code == none {

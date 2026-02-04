@@ -11,6 +11,13 @@
   start-date: datetime(day: 7, month: 9, year: 2025),
   main-color: "#C4122E",
   // outline-code: your-outline-code
+  // Cover page customization example:
+  // cover: (
+  //   bg: rgb("#1a1a2e"),
+  //   decorations: false,
+  //   title: (color: white, size: 3em),
+  //   subtitle: (color: white),
+  // ),
 )
 
 = Component Customization Showcase
