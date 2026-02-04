@@ -47,6 +47,8 @@
  * @param color-words - Array of words to highlight with primary color
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @param language - Language code ("fr" for French, "en" for English)
+ * @param margin - Page margin dictionary
+ * @param page-number-color - Color for page numbers (auto = default text color)
  * @param body - The document content
  */
 #let apply-styling(
@@ -58,6 +60,8 @@
   color-words,
   show-secondary-header,
   language,
+  margin,
+  page-number-color,
   body
 ) = {
   // Main document settings
@@ -65,8 +69,12 @@
     fill: none,
     header-ascent: 50%,
     footer-descent: 50%,
-    margin: page-margin,
-    numbering: "1 / 1",
+    margin: margin,
+    numbering: if page-number-color != auto {
+      (..nums) => text(fill: page-number-color, numbering("1 / 1", ..nums))
+    } else {
+      "1 / 1"
+    },
     number-align: bottom + right,
 
     header: context [
@@ -176,12 +184,11 @@
 
   // Outline styling
   set outline(indent: n => n * 0.5em)
-  show outline.entry: it => text(size: 12pt, weight: "regular", it)
 
   // Set header after initial pages
   set page(
       // header: get-header(author: author,show-secondary-header: show-secondary-header),
-      margin: page-margin
+      margin: margin
   )
 
   body
@@ -219,6 +226,7 @@
  * @param logo - Optional logo to display
  * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
  * @param cover - Resolved cover configuration dict with title/subtitle styling
+ * @param outline-color - Color for table of contents entries (auto = default text color)
  */
 #let create-title-page(
   title,
@@ -235,6 +243,7 @@
   logo,
   outline-code,
   cover,
+  outline-color,
 ) = {
   // Logo placement
   if logo != none {
@@ -327,8 +336,17 @@
 
   // Conditional outline rendering
   if outline-code == none {
-    // Default outline with reduced indent
-    outline(indent: n => n * 0.5em)
+    {
+      show outline.entry: it => {
+        if outline-color != auto {
+          set text(fill: outline-color)
+          link(it.element.location(), it.indented(it.prefix(), it.inner()))
+        } else {
+          link(it.element.location(), it.indented(it.prefix(), it.inner()))
+        }
+      }
+      outline(indent: auto)
+    }
   } else if outline-code != false {
     // Custom outline code provided by user
     outline-code

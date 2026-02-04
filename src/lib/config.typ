@@ -32,7 +32,11 @@
  * @param start-date - Document start date (use none to hide the date)
  * @param last-updated-date - Last updated date
  * @param logo - Logo image to display
- * @param main-color - Primary color for the theme (hex string)
+ * @param colors - Color configuration dictionary with keys:
+ *   main: primary theme color as hex string (default "E94845")
+ *   outline: color for table of contents entries (auto = default text color)
+ *   page-number: color for page numbers (auto = default text color)
+ *   Partial overrides are supported (e.g., (main: "#C4122E") keeps the other defaults).
  * @param color-words - Array of words to highlight with primary color
  * @param default-font - Default font object (name: string, weight: int/string) for body text
  * @param body-font - Font object for body text (defaults to default-font)
@@ -41,6 +45,8 @@
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @param language - Language code ("fr" for French, "en" for English)
  * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
+ * @param margin - Page margin overrides as a dictionary with keys: top, right, bottom, left.
+ *   Partial overrides are supported (e.g., (top: 4cm) keeps the other defaults).
  * @param cover - Cover page configuration dictionary with keys:
  *   bg: page background color (none = transparent)
  *   decorations: toggle decorative circles (true/false)
@@ -60,7 +66,7 @@
   start-date: datetime.today(),
   last-updated-date: datetime.today(),
   logo: none,
-  main-color: "E94845",
+  colors: (:),
   color-words: (),
   default-font: (name: "New Computer Modern Math", weight: 400),
   body-font: none,
@@ -69,6 +75,7 @@
   show-secondary-header: true,
   language: "fr",
   outline-code: none,
+  margin: (:),
   cover: (:),
   body,
 ) = {
@@ -79,8 +86,14 @@
   let body-font = if body-font == none { default-font } else { body-font }
   let title-font = if title-font == none { default-font } else { title-font }
 
-  // Color configuration
-  let primary-color = rgb(main-color)
+  // Color configuration - merge user overrides with defaults
+  let default-colors = (
+    main: "E94845",
+    outline: auto,
+    page-number: auto,
+  )
+  let final-colors = default-colors + colors
+  let primary-color = rgb(final-colors.main)
   let secondary-color = primary-color.lighten(30%)
 
   // Cover page configuration - deep merge with defaults
@@ -156,12 +169,15 @@
   let author-list = if type(author) == str { (author,) } else { author }
   let author-display = author-list.join("\n")
 
+  // Margin configuration - merge user overrides with defaults
+  let final-margin = page-margin + margin
+
   // Document metadata
   set document(author: author-list, title: title)
   set text(lang: language)
 
   // Apply page margins and cover background (none = transparent, the default)
-  set page(margin: page-margin, fill: final-cover.bg)
+  set page(margin: final-margin, fill: final-cover.bg)
 
   // Conditionally add decorative elements
   if final-cover.decorations {
@@ -184,6 +200,7 @@
     logo,
     outline-code,
     final-cover,
+    final-colors.outline,
   )
 
   // Apply main styling and render body content
@@ -196,6 +213,8 @@
     color-words,
     show-secondary-header,
     language,
+    final-margin,
+    final-colors.page-number,
     body
   )
 }

@@ -8,7 +8,7 @@
   subtitle: "Class subtitle",
   logo: image("./assets/cnam_logo.svg"),
   start-date: datetime(day: 7, month: 9, year: 2025),
-  main-color: "#C4122E",
+  colors: (main: "#C4122E"),
 )
 
 = Main title

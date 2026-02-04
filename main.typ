@@ -9,7 +9,7 @@
   subtitle: "Demonstrating Enhanced Components",
   logo: image("template/assets/cnam_logo.svg"),
   start-date: datetime(day: 7, month: 9, year: 2025),
-  main-color: "#C4122E",
+  colors: (main: "#C4122E"),
   // outline-code: your-outline-code
   // Cover page customization example:
   // cover: (
