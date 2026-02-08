@@ -1,5 +1,5 @@
 
-#import "@preview/clean-cnam-template:1.1.0": *
+#import "@preview/clean-cnam-template:1.6.2": *
 
 #show: clean-cnam-template.with(
   title: "Main Title",
@@ -61,6 +61,26 @@ For my maths class, I made these things:
     Then, there exists a basis $(X_1, X_2, dots, X_n, X_{n+1}, dots, X_m)$ of $E$ such that $(X_1, X_2, dots, X_n)$ is a basis of $F$.
 ]
 
+=== Custom styling
+
+#definition(
+  title: "Styled Definition",
+  title-style: (fill: blue, weight: "bold"),
+  body-style: (size: 0.95em),
+)[
+    A *group* is a set $G$ equipped with a binary operation $dot$ satisfying closure, associativity, identity, and invertibility.
+]
+
+#theorem(
+  title: "Styled Theorem",
+  title-style: (fill: orange.darken(20%)),
+  body-style: (fill: luma(60)),
+)[
+    \
+    For any right triangle with sides $a$, $b$, and hypotenuse $c$:
+    $ a^2 + b^2 = c^2 $
+]
+
 === `ar`
 
 For vectors, I use `ar(X)` and it gives $ar(X)$.
@@ -71,6 +91,15 @@ For vectors, I use `ar(X)` and it gives $ar(X)$.
 #my-block(
   [
   Custom Block
+  ]
+)
+
+#my-block(
+  title: "Styled Block",
+  title-style: (size: 1.2em, fill: blue),
+  body-style: (size: 0.9em, fill: luma(80)),
+  [
+  This block uses custom title and body styling.
   ]
 )
 

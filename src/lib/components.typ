@@ -169,8 +169,9 @@
  * @param width - The width of the block: auto for content width, 100% for full width, or custom length (default: auto)
  * @param title - Optional title text to display at the top (default: none)
  * @param title-align - The alignment of the title: left, center, or right (default: left)
- * @param title-style - Text styling for the title: (size, weight, fill) (default: (size: 1.1em, weight: "bold", fill: black))
+ * @param title-style - Text styling for the title: (size, weight, fill, font) (default: (size: 1.1em, weight: "bold", fill: black, font: auto))
  * @param title-inset - The padding around the title (default: (bottom: 8pt))
+ * @param body-style - Text styling for the body: (size, weight, fill, font) where auto means inherit (default: (size: auto, weight: auto, fill: auto, font: auto))
  * @param content - The content of the block
  * @returns A styled content block
  *
@@ -223,8 +224,9 @@
   width: auto,
   title: none,
   title-align: left,
-  title-style: (size: 1.1em, weight: "bold", fill: black),
+  title-style: (size: 1.1em, weight: "bold", fill: black, font: auto),
   title-inset: (bottom: 8pt),
+  body-style: (size: auto, weight: auto, fill: auto, font: auto),
   content
 ) => {
   align(
@@ -237,18 +239,43 @@
       width: width,
       {
         if title != none {
+          let title-font = title-style.at("font", default: auto)
           align(
             title-align,
-            text(
-              size: title-style.at("size", default: 1.1em),
-              weight: title-style.at("weight", default: "bold"),
-              fill: title-style.at("fill", default: black),
-              title
-            )
+            {
+              let styled-title = text(
+                size: title-style.at("size", default: 1.1em),
+                weight: title-style.at("weight", default: "bold"),
+                fill: title-style.at("fill", default: black),
+                title
+              )
+              if title-font != auto {
+                set text(font: title-font)
+                styled-title
+              } else {
+                styled-title
+              }
+            }
           )
           v(title-inset.at("bottom", default: 8pt))
         }
-        align(content-align, content)
+
+        // Apply body-style if any non-auto values are set
+        let body-size = body-style.at("size", default: auto)
+        let body-weight = body-style.at("weight", default: auto)
+        let body-fill = body-style.at("fill", default: auto)
+        let body-font = body-style.at("font", default: auto)
+
+        let styled-body = content
+        if body-size != auto { styled-body = text(size: body-size, styled-body) }
+        if body-weight != auto { styled-body = text(weight: body-weight, styled-body) }
+        if body-fill != auto { styled-body = text(fill: body-fill, styled-body) }
+
+        if body-font != auto {
+          align(content-align, { set text(font: body-font); styled-body })
+        } else {
+          align(content-align, styled-body)
+        }
       }
     )
   )
@@ -331,7 +358,7 @@
  * @param lang-box - Language label styling configuration: (gutter, radius, outset, fill, text-style) (default: custom)
  * @param title - Optional title to display above the code block (default: none)
  * @param title-align - The alignment of the title: left, center, or right (default: left)
- * @param title-style - Text styling for the title: (size, weight, fill) (default: (size: 1em, weight: "bold", fill: black))
+ * @param title-style - Text styling for the title: (size, weight, fill, font) (default: (size: 1em, weight: "bold", fill: black, font: auto))
  * @param title-inset - The padding around the title (default: (bottom: 8pt))
  * @param source - The source code content as raw text block
  */
@@ -358,7 +385,7 @@
   ),
   title: none,
   title-align: left,
-  title-style: (size: 1em, weight: "bold", fill: black),
+  title-style: (size: 1em, weight: "bold", fill: black, font: auto),
   title-inset: (bottom: 8pt),
   source
 ) = {
@@ -483,17 +510,26 @@
         spacing: 0pt,
         // Optional title above everything
         if title != none {
+          let title-font = title-style.at("font", default: auto)
           block(
             width: width,
             inset: (bottom: title-inset.at("bottom", default: 8pt)),
             align(
               title-align,
-              text(
-                size: title-style.at("size", default: 1em),
-                weight: title-style.at("weight", default: "bold"),
-                fill: title-style.at("fill", default: black),
-                title
-              )
+              {
+                let styled-title = text(
+                  size: title-style.at("size", default: 1em),
+                  weight: title-style.at("weight", default: "bold"),
+                  fill: title-style.at("fill", default: black),
+                  title
+                )
+                if title-font != auto {
+                  set text(font: title-font)
+                  styled-title
+                } else {
+                  styled-title
+                }
+              }
             )
           )
         },

@@ -38,10 +38,12 @@
  *   page-number: color for page numbers (auto = default text color)
  *   Partial overrides are supported (e.g., (main: "#C4122E") keeps the other defaults).
  * @param color-words - Array of words to highlight with primary color
- * @param default-font - Default font object (name: string, weight: int/string) for body text
- * @param body-font - Font object for body text (defaults to default-font)
- * @param title-font - Font object for titles and headings (defaults to default-font)
- * @param code-font - Font object for code blocks and monospace text
+ * @param fonts - Font configuration dictionary with keys:
+ *   default: default font object (name: string, weight: int/string) (default "New Computer Modern Math", 400)
+ *   body: font for body text (auto = uses default)
+ *   title: font for titles and headings (auto = uses default)
+ *   code: font for code blocks (default "Zed Plex Mono", 400)
+ *   Partial overrides are supported (e.g., (title: (name: "Arial", weight: 700)) keeps the other defaults).
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @param language - Language code ("fr" for French, "en" for English)
  * @param outline-code - Custom outline code (none for default, false to disable, or custom content)
@@ -50,10 +52,10 @@
  * @param cover - Cover page configuration dictionary with keys:
  *   bg: page background color (none = transparent)
  *   decorations: toggle decorative circles (true/false)
- *   title: dict with color, weight, size, font (auto = primary-color / title-font.name)
- *   subtitle: dict with color, weight, size, font (auto = title color / title-font.name)
- *   date: dict with color, weight, size, font (auto = title color / body-font)
- *   author: dict with color, weight, size, font (auto = title color / body-font)
+ *   title: dict with color, weight, size, font (auto = primary-color / fonts.title.name)
+ *   subtitle: dict with color, weight, size, font (auto = title color / fonts.title.name)
+ *   date: dict with color, weight, size, font (auto = title color / fonts.body)
+ *   author: dict with color, weight, size, font (auto = title color / fonts.body)
  * @param body - Document content
  */
 #let clean-cnam-template(
@@ -68,10 +70,7 @@
   logo: none,
   colors: (:),
   color-words: (),
-  default-font: (name: "New Computer Modern Math", weight: 400),
-  body-font: none,
-  title-font: none,
-  code-font: (name: "Zed Plex Mono", weight: 400),
+  fonts: (:),
   show-secondary-header: true,
   language: "fr",
   outline-code: none,
@@ -79,12 +78,29 @@
   cover: (:),
   body,
 ) = {
-  // Set global font configuration
-  set-fonts(default-font: default-font, code-font: code-font)
+  // Font configuration - merge user overrides with defaults
+  let default-fonts = (
+    default: (name: "New Computer Modern Math", weight: 400),
+    body: auto,
+    title: auto,
+    code: (name: "Zed Plex Mono", weight: 400),
+  )
+  let final-fonts = default-fonts + fonts
 
-  // Font configuration - use default-font as fallback
-  let body-font = if body-font == none { default-font } else { body-font }
-  let title-font = if title-font == none { default-font } else { title-font }
+  // Resolve auto values (body and title cascade from default)
+  if final-fonts.body == auto {
+    final-fonts.body = final-fonts.default
+  }
+  if final-fonts.title == auto {
+    final-fonts.title = final-fonts.default
+  }
+
+  // Set global font configuration
+  set-fonts(fonts: final-fonts)
+
+  // Local aliases for convenience
+  let body-font = final-fonts.body
+  let title-font = final-fonts.title
 
   // Color configuration - merge user overrides with defaults
   let default-colors = (
