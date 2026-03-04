@@ -11,6 +11,7 @@ This template uses the following external packages:
 - `@preview/headcount:0.1.0` - Counter management
 - `@preview/hydra:0.6.2` - Intelligent page headers with section awareness
 - `@preview/i-figured:0.2.4` - Figure and equation numbering
+- `@preview/orchid:0.1.0` - ORCID link generation (required when using ORCID author fields)
 
 ## Project Structure
 
@@ -52,7 +53,7 @@ This template uses the following external packages:
 
    - Using the published package (as in `main.typ`):
    ```typst
-   #import "@preview/clean-cnam-template:1.3.0": *
+   #import "@preview/clean-cnam-template:1.6.4": *
    ```
 
    - Using this repository locally (from `src/`):
@@ -87,7 +88,7 @@ The `clean-cnam-template` function accepts the following parameters:
 |-----------|------|---------|-------------|
 | `title` | string | `""` | Document title |
 | `subtitle` | string | `""` | Document subtitle |
-| `author` | string | `""` | Author name |
+| `author` | string / dict / array | `""` | Author name(s). Accepts a plain string, a dict `(name: "..", orcid: (id: "..", name: ".."))`, or a mixed array of both. When `orcid.id` is present, a clickable ORCID link is rendered on the cover. |
 | `affiliation` | string | `""` | Author's affiliation/institution |
 | `year` | int | current year | Year for school year calculation |
 | `class` | string/none | `none` | Class/course name |
@@ -116,6 +117,7 @@ The `cover` parameter lets you control the cover page background, decorative cir
 |-----|------|---------|-------------|
 | `bg` | color/none | `none` | Page background color (`none` = transparent) |
 | `decorations` | bool | `true` | Show decorative circles on the cover page |
+| `decorations.second-logo` | dict / none | `none` | Secondary logo placed inside the top-left circle. Keys: `image` (content), `scale` (float, default `1.0`), `dx` / `dy` (length, default `0pt`) |
 | `padding` | length | `1em` | Space between the horizontal lines and the content |
 | `spacing` | length | `1em` | Space between elements (title, subtitle, date) |
 | `title` | dictionary | see below | Title text configuration |
@@ -436,17 +438,18 @@ Formats a datetime object to French format (DD/MM/YYYY).
 
 ## Recent Updates
 
-### v1.3.0 - Header and Heading Improvements (Latest)
-- **New header system**: Integrated hydra for intelligent section-aware page headers
-- **Enhanced chapter styling**: Redesigned level 1 headings with centered layout, "Chapter N" prefix, and decorative lines
-- **Fixed heading numbering**: Sub-headings now only display their relevant numbers (e.g., "I -" instead of "III I -")
-- **New utility**: Added `thinLine` for consistent decorative elements
+### v1.6.4 - Cover Page Improvements (Latest)
+- **ORCID author links**: The `author` parameter now accepts a dict or mixed array with an `orcid` field; a clickable ORCID link is rendered on the cover when provided
+- **Second cover logo**: New `second-logo` key in `cover.decorations` places a secondary logo inside the top-left circle decoration
 
-### v1.2.0 - Component Customization
-- **Blockquote enhancements**: Border side selection, attribution support, alignment options
-- **my-block improvements**: Title support, flexible alignment, width control
-- **Code component updates**: Title parameter, enhanced styling options
-- **Math components**: Full customization for definition, example, and theorem blocks
+### v1.6.2 - Math and Block Styling
+- **`my-block` body styling**: New `body-style` parameter for body text customization
+- **Math component text styling**: New `title-style` and `body-style` parameters for `definition`, `example`, and `theorem`
+- **Math components refactored**: Converted from `.with()` wrappers to proper functions with explicit parameters
+
+### v1.5.0 - Font Customization
+- **BREAKING: Font parameters use objects**: All font parameters now accept `(name: "..", weight: 400)` instead of plain strings
+- **New `body-font` and `title-font` parameters**: Independent font selection for body text and headings
 
 ## Previous Updates
 
