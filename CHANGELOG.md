@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-03-04
+## [1.6.3] - 2026-03-04
+
+### Added
+
+- **ORCID support on the cover page**: The `author` parameter now accepts dicts with an `orcid` field
+  - Accepts a string, a dict, or a mixed array of both
+  - Dict format: `(name: "Author Name", orcid: (id: "0000-0000-0000-0000", name: "optional display name"))`
+  - When `orcid.id` is present a clickable ORCID link is rendered next to the author name
+  - `orcid.name` defaults to `author.name` when omitted
+  - Requires `@preview/orchid:0.1.0`
+- **Second logo on the cover**: `cover.decorations` now accepts a `second-logo` key for placing a secondary logo inside the top-left circle decoration
+  - `image`: logo content — pass `image("...")` from your document file so relative paths resolve correctly
+  - `scale`: scale factor relative to the circle diameter (default `1.0`)
+  - `dx` / `dy`: lengths for fine-tuning the logo position (default `0pt`)
+
 ## [1.6.2] - 2026-02-08
 
 ### Added
