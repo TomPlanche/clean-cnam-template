@@ -60,6 +60,9 @@
  * @param cover - Cover page configuration dictionary with keys:
  *   bg: page background color (none = transparent)
  *   decorations: toggle decorative circles (true/false)
+ *   second-logo: optional dict for the top-left secondary circle logo, with keys:
+ *     image (content, pass image("...") from your file), scale (float, default 1.0),
+ *     dx (length, default 0pt), dy (length, default 0pt) for manual centering adjustments
  *   title: dict with color, weight, size, font (auto = primary-color / fonts.title.name)
  *   subtitle: dict with color, weight, size, font (auto = title color / fonts.title.name)
  *   date: dict with color, weight, size, font (auto = title color / fonts.body)
@@ -124,6 +127,7 @@
   let default-cover = (
     bg: none,
     decorations: true,
+    second-logo: none,
     padding: 1em,
     spacing: 1em,
     title: (
@@ -223,7 +227,11 @@
 
   // Conditionally add decorative elements
   if final-cover.decorations {
-    add-decorations(primary-color, secondary-color)
+    add-decorations(
+      primary-color,
+      secondary-color,
+      second-logo: final-cover.second-logo,
+    )
   }
 
   // Create title page

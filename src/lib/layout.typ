@@ -199,11 +199,31 @@
  *
  * @param primary-color - The primary color for decorations
  * @param secondary-color - The secondary color for decorations
+ * @param second-logo - Optional dict with keys:
+ *   image: logo content (pass image("...") from the user's file so relative paths resolve correctly)
+ *   scale: scale factor relative to the circle diameter (default 1.0 = full diameter)
+ *   dx: horizontal offset to fine-tune centering (default 0pt)
+ *   dy: vertical offset to fine-tune centering (default 0pt)
  */
-#let add-decorations(primary-color, secondary-color) = {
+#let add-decorations(primary-color, secondary-color, second-logo: none) = {
   // Top left decoration
   place(top + left, dx: -25%, dy: -28%, circle(radius: 150pt, fill: primary-color))
   place(top + left, circle(radius: 75pt, fill: secondary-color))
+
+  // Logo inside the secondary circle
+  if second-logo != none {
+    let circle-radius = 75pt
+    let scale = if "scale" in second-logo { second-logo.scale } else { 1 }
+    let dx = if "dx" in second-logo { second-logo.dx } else { 0pt }
+    let dy = if "dy" in second-logo { second-logo.dy } else { 0pt }
+    let logo-size = 2 * circle-radius * scale
+    place(
+      top + left,
+      dx: circle-radius - logo-size / 2 + dx,
+      dy: circle-radius - logo-size / 2 + dy,
+      box(width: logo-size, height: logo-size, clip: true, second-logo.image),
+    )
+  }
 
   // Bottom right decoration
   place(bottom + right, dx: 25%, dy: 25%, circle(radius: 100pt, fill: secondary-color))
