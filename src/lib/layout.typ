@@ -66,7 +66,7 @@
 ) = {
   // Main document settings
   set page(
-    fill: none,
+    fill: white,
     header-ascent: 50%,
     footer-descent: 50%,
     margin: margin,

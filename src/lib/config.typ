@@ -125,7 +125,7 @@
 
   // Cover page configuration - deep merge with defaults
   let default-cover = (
-    bg: none,
+    bg: white,
     decorations: true,
     second-logo: none,
     padding: 1em,
