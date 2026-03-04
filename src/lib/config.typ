@@ -7,11 +7,14 @@
  * @license MIT
  */
 
-// Import all modules
+// modules
 #import "fonts.typ": set-fonts
 #import "components.typ": blockquote, my-block, code
 #import "layout.typ": apply-styling, add-decorations, create-title-page, page-margin
 #import "utils.typ": icon, ar
+
+// Libs
+#import "@preview/orchid:0.1.0": generate-link
 
 // Re-export components for easy access
 #let blockquote = blockquote
@@ -25,7 +28,12 @@
  *
  * @param title - Document title
  * @param subtitle - Document subtitle
- * @param author - Author name (string) or list of authors (array of strings)
+ * @param author - Author(s). Accepts:
+ *   - string: plain author name
+ *   - dict: { name: string (required), orcid: string | { id: string (required), name: string (optional) } }
+ *   - array of the above (mixed is supported)
+ *   When orcid.id is present, an ORCID link is appended after the name.
+ *   orcid.name defaults to author.name if omitted.
  * @param affiliation - Author's affiliation/institution
  * @param year - Year for school year calculation
  * @param class - Class/course name
@@ -181,9 +189,27 @@
     final-cover.author.font = body-font.name
   }
 
-  // Normalize author to array and create display string
-  let author-list = if type(author) == str { (author,) } else { author }
-  let author-display = author-list.join("\n")
+  // Normalize author to array
+  let author-list-raw = if type(author) in (str, dictionary) { (author,) } else { author }
+
+  // Extract plain names for document metadata
+  let author-list = author-list-raw.map(a => if type(a) == str { a } else { a.name })
+
+  // Build display content with optional ORCID links
+  let author-display = author-list-raw.map(a => {
+    if type(a) == str {
+      a
+    } else {
+      if "orcid" in a and a.orcid != none {
+        let orcid-id = if type(a.orcid) == str { a.orcid } else { a.orcid.id }
+        let orcid-name = if type(a.orcid) == dictionary and "name" in a.orcid and a.orcid.name != none { a.orcid.name } else { a.name }
+
+        generate-link(orcid-id, name: orcid-name)
+      } else {
+        a.name
+      }
+    }
+  }).join("\n")
 
   // Margin configuration - merge user overrides with defaults
   let final-margin = page-margin + margin
