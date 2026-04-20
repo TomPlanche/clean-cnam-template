@@ -1,11 +1,10 @@
+pre-commit:
+  commands:
+    - ./scripts/package @local
+
 pre-push:
   commands:
-    - echo "Running pre-push checks..."
-
-    - echo "Installing local package..."
     - just install
-
-    - echo "Generating thumbnail from first page..."
     - typst compile --format png --pages 1 --ppi 300 template/main.typ thumbnail.png
-
-    - echo "Pre-push checks complete."
+    - git add thumbnail.png
+    - git commit --amend --no-edit
