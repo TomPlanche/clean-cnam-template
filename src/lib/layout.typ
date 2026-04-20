@@ -29,8 +29,18 @@
 
 // Global font size setting
 #let body-font-size = 12pt
+
+// State to skip big-title formatting for the next level-1 heading
+#let _no-big-title-state = state("no-big-title", false)
+
+/**
+ * Cancel the decorative chapter formatting for the immediately following `=` heading.
+ * The heading will render as a plain level-1 heading instead.
+ */
+#let no-big-title() = _no-big-title-state.update(true)
+
 #let page-margin = (
-    top: 3cm,
+    top: 2.5cm,
     right: 1.27cm,
     bottom: 1.75cm,
     left: 1.27cm
@@ -94,8 +104,10 @@
 
       #hydra(2, display: (_, it) => {
         set align(right)
+
         numbering(it.numbering, ..counter(heading).at(it.location()))
-        [.] + h(0.3cm) + it.body
+
+        h(0.3cm) + it.body
 
         v(-0.3cm)
 
@@ -134,22 +146,34 @@
   // Heading spacing
   show heading: it => it + v(.5em)
   show heading: it => {
-    if it.level == 1 [
-      #set align(center)
-      #set block(spacing: 0.6cm)
+    if it.level == 1 {
+      context {
+        let skip = _no-big-title-state.at(here())
+        if skip [
+          #_no-big-title-state.update(false)
+          #set text(size: 1.2em)
+          #it
+        ] else [
+          #set align(center)
+          #set block(spacing: 0.6cm)
 
-      #pagebreak(weak: false)
-      #context {
-        if heading.numbering != none  [
-          #let heading_num = counter(heading).at(here()).at(0)
-          #linguify("chapter", from: translations-database) #heading_num
+          #pagebreak(weak: false)
+
+          #v(-(margin.top / 2))
+
+          #context {
+            if heading.numbering != none [
+              #let heading_num = counter(heading).at(here()).at(0)
+              #linguify("chapter", from: translations-database) #heading_num
+            ]
+          }
+
+          #thin-line(primary-color)
+          #text(size: 1.5em)[#it.body]
+          #thin-line(primary-color)
         ]
       }
-
-      #thin-line(primary-color)
-      #text(size: 1.5em)[#it.body]
-      #thin-line(primary-color)
-    ] else [
+    } else [
       #set text(size: 1.2em)
       #it
     ]
@@ -301,7 +325,7 @@
       align(
           center,
           text(font: cover.date.font, weight: cover.date.weight, cover.date.size, fill: cover.date.color,
-            if not cover.date.range or start-date == last-updated-date {
+            if last-updated-date == none or not cover.date.range or start-date == last-updated-date {
               date-format(start-date)
             } else {
               date-format(start-date) + " - " + date-format(last-updated-date)
@@ -318,8 +342,8 @@
   v(2fr)
 
   // Author information
-  let school-year = if start-date != none and start-date.month() < 9 { int(year) - 1 } else { int(year) }
-  let next-year = str(school-year + 1)
+  let school-year = if year == none { none } else if start-date != none and start-date.month() < 9 { int(year) - 1 } else { int(year) }
+  let next-year = if school-year != none { str(school-year + 1) } else { none }
 
   let bottom-text = text(
     font: cover.author.font,
@@ -337,7 +361,9 @@
       font: cover.author.font,
       weight: body-font.weight,
       fill: cover.author.color,
-      if cover.date.range { str(school-year) + "-" + str(next-year) } else { str(school-year) } + "\n" + emph[#class],
+      (if school-year != none {
+      if cover.date.range { str(school-year) + "-" + str(next-year) } else { str(school-year) }
+    } else { "" }) + "\n" + emph[#class],
       cover.author.size)
   }
 
