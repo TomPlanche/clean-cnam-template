@@ -39,6 +39,15 @@
  */
 #let no-big-title() = _no-big-title-state.update(true)
 
+// State to suppress numbering for the next heading (any level)
+#let _no-numbering-state = state("no-numbering", false)
+
+/**
+ * Suppress the numbering prefix for the immediately following heading (any level).
+ * The heading retains its normal styling and font size — only the number is omitted.
+ */
+#let no-numbering() = _no-numbering-state.update(true)
+
 #let page-margin = (
     top: 2.5cm,
     right: 1.27cm,
@@ -135,16 +144,15 @@
     if level == 1 {
       numbering("I -", ..nums)
     } else if level == 2 {
-      numbering("  I -", nums.pos().last())
+      numbering("I -", nums.pos().last())
     } else if level == 3 {
-      numbering("    I.I -", nums.pos().at(1), nums.pos().last())
+      numbering("I.I -", nums.pos().at(1), nums.pos().last())
     } else if level == 4 {
-      numbering("     I.I.1 -", nums.pos().at(1), nums.pos().at(2), nums.pos().last())
+      numbering("I.I.1 -", nums.pos().at(1), nums.pos().at(2), nums.pos().last())
     }
   })
 
   // Heading spacing
-  show heading: it => it + v(.5em)
   show heading: it => {
     if it.level == 1 {
       context {
@@ -153,6 +161,16 @@
           #_no-big-title-state.update(false)
           #set text(size: 1.2em)
           #it
+        ] else if _no-numbering-state.at(here()) [
+          #_no-numbering-state.update(false)
+          #set text(size: 1.5em)
+          #set align(center)
+          #set block(spacing: 0.6cm)
+          #pagebreak(weak: false)
+          #v(-(margin.top / 2))
+          #thin-line(primary-color)
+          #it.body
+          #thin-line(primary-color)
         ] else [
           #set align(center)
           #set block(spacing: 0.6cm)
@@ -173,10 +191,25 @@
           #thin-line(primary-color)
         ]
       }
-    } else [
-      #set text(size: 1.2em)
-      #it
-    ]
+    } else {
+      // Font size decreases with depth: == 1.2em, === 1.1em, ==== 1.0em, ===== 0.95em, ====== 0.9em
+      let heading-size = (1.2em, 1.1em, 1.0em, 0.95em, 0.9em).at(calc.min(it.level - 2, 4))
+      // Render without Typst's built-in hanging indent (which grows with level depth)
+      block(above: 1.2em, below: 0.9em, sticky: true, width: 100%)[
+        #set text(size: heading-size)
+        #context {
+          let skip-num = _no-numbering-state.at(it.location())
+          if skip-num {
+            _no-numbering-state.update(false)
+          }
+          if it.numbering != none and not skip-num [
+            #numbering(it.numbering, ..counter(heading).at(it.location()))
+            #h(0.3em)
+          ]
+          it.body
+        }
+      ]
+    }
   }
 
   // Link styling

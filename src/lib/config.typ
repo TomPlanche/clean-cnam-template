@@ -10,7 +10,7 @@
 // modules
 #import "fonts.typ": set-fonts
 #import "components.typ": blockquote, my-block, code
-#import "layout.typ": apply-styling, add-decorations, create-title-page, page-margin
+#import "layout.typ": apply-styling, add-decorations, create-title-page, page-margin, no-big-title, no-numbering
 #import "utils.typ": icon, ar
 
 // Libs
