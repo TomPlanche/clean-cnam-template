@@ -291,7 +291,6 @@
  * - Customizable styling and theming
  * - Label support for referencing specific lines
  * - Line range selection for partial code display
- * - Optional title/caption support
  * - Flexible alignment options
  *
  * ## Usage Examples
@@ -315,20 +314,6 @@
  * )
  * ```
  *
- * With title and custom colors:
- * ```typst
- * #code(
- *   title: "Example Implementation",
- *   title-align: center,
- *   lang: "JavaScript",
- *   filename: "app.js",
- *   fill: rgb("#1e1e1e"),
- *   text-style: (size: 9pt, fill: rgb("#d4d4d4")),
- *   number-style: (fill: rgb("#858585")),
- *   source
- * )
- * ```
- *
  * Centered block with line range:
  * ```typst
  * #code(
@@ -342,24 +327,21 @@
  *
  * @param line-spacing - Vertical spacing between code lines (default: 5pt)
  * @param line-offset - Horizontal offset for line numbers (default: 5pt)
- * @param numbering - Whether to display line numbers (default: true)
+ * @param numbering - Whether to display line numbers: true, false, or auto (hides for single-line blocks) (default: true)
  * @param inset - Inner padding around the code block (default: 5pt)
  * @param radius - Border radius for rounded corners (default: 3pt)
  * @param number-align - Alignment of line numbers: left, center, right (default: right)
  * @param number-style - Styling for line numbers: (size, fill, weight) (default: (size: 8pt, fill: gray))
  * @param stroke - Border stroke style and color (default: 1pt + luma(180))
  * @param fill - Background fill color (default: luma(250))
- * @param text-style - Text styling configuration: (size, font, fill) (default: (size: 8pt, font: "Zed Plex Mono"))
+ * @param text-style - Text styling for the code body: (size, font, fill) (default: (size: 8pt, font: "Zed Plex Mono"))
  * @param width - Block width, can be length or percentage (default: 100%)
  * @param block-align - The alignment of the block itself (default: left)
  * @param lines - Line range to display: (start, end) or auto for all (default: auto)
  * @param lang - Programming language for syntax highlighting (default: none)
  * @param filename - Optional filename to display before the language (default: none)
  * @param lang-box - Language label styling configuration: (gutter, radius, outset, fill, text-style) (default: custom)
- * @param title - Optional title to display above the code block (default: none)
- * @param title-align - The alignment of the title: left, center, or right (default: left)
- * @param title-style - Text styling for the title: (size, weight, fill, font) (default: (size: 1em, weight: "bold", fill: black, font: auto))
- * @param title-inset - The padding around the title (default: (bottom: 8pt))
+ * @param title - Text styling for the language/filename label bar: (size, font, fill, weight) (default: (:))
  * @param source - The source code content as raw text block
  */
 #let code(
@@ -383,10 +365,7 @@
     radius: 3pt,
     outset: 1.75pt,
   ),
-  title: none,
-  title-align: left,
-  title-style: (size: 1em, weight: "bold", fill: black, font: auto),
-  title-inset: (bottom: 8pt),
+  title: (:),
   source
 ) = {
   // Helper function to extract labels from source code
@@ -409,6 +388,7 @@
     size: style.at("size", default: 8pt),
     fill: style.at("fill", default: gray),
     weight: style.at("weight", default: "regular"),
+    font: style.at("font", default: auto),
     str(number)
   )
 
@@ -437,22 +417,41 @@
   let labels = extract-labels(source.text)
   let unlabelled-source = clean-source(source.text)
 
+  // Infer language from the raw block if not explicitly provided
+  // "text" is not a real language — treat it as none when inferred from the raw block
+  let effective-lang = if lang != none {
+    lang
+  } else if source.lang != none and source.lang != "text" {
+    source.lang
+  } else {
+    none
+  }
+
   context {
     let fonts = get-fonts()
-    let final-text-style = (..text-style, font: fonts.code.name, weight: fonts.code.weight)
+    let final-text-style = (font: fonts.code.name, weight: fonts.code.weight, ..text-style)
+    let final-number-style = (font: fonts.code.name, ..number-style)
 
     // Apply text styling to raw content
-    show raw.line: set text(..final-text-style)
-    show raw: set text(..final-text-style)
+    // Disable kerning and ligatures to preserve strict monospace grid alignment
+    show raw.line: set text(..final-text-style, kerning: true, ligatures: true)
+    show raw: set text(..final-text-style, kerning: true, ligatures: true)
     set par(justify: false, leading: line-spacing)
 
     show raw.where(block: true): it => context {
     // Normalize line range using helper function
     let line-range = normalize-line-range(lines, it.lines.len())
 
+    // Resolve effective numbering: auto means show only when more than one line
+    let effective-numbering = if numbering == auto {
+      it.lines.len() > 1
+    } else {
+      numbering
+    }
+
     // Calculate maximum line number width for proper alignment
-    let maximum-number-length = if numbering {
-      measure(create-line-number(line-range.at(1), number-style)).width
+    let maximum-number-length = if effective-numbering {
+      measure(create-line-number(line-range.at(1), final-number-style)).width
     } else {
       0pt
     }
@@ -477,8 +476,8 @@
               columns: (maximum-number-length, 1fr),
               column-gutter: line-offset,
               align: (number-align, left),
-              if numbering {
-                create-line-number(line.number, number-style)
+              if effective-numbering {
+                create-line-number(line.number, final-number-style)
               },
               {
                 let line-label = labels.at(line.number - 1)
@@ -502,39 +501,14 @@
     )
   }
 
-    // Create the complete code block with optional title and language label
+    // Create the complete code block with optional language label
     align(
       block-align,
       stack(
         dir: ttb,
         spacing: 0pt,
-        // Optional title above everything
-        if title != none {
-          let title-font = title-style.at("font", default: auto)
-          block(
-            width: width,
-            inset: (bottom: title-inset.at("bottom", default: 8pt)),
-            align(
-              title-align,
-              {
-                let styled-title = text(
-                  size: title-style.at("size", default: 1em),
-                  weight: title-style.at("weight", default: "bold"),
-                  fill: title-style.at("fill", default: black),
-                  title
-                )
-                if title-font != auto {
-                  set text(font: title-font)
-                  styled-title
-                } else {
-                  styled-title
-                }
-              }
-            )
-          )
-        },
         // Language/filename label outside and above the code block
-        if filename != none or lang != none {
+        if filename != none or effective-lang != none {
           rect(
             width: width,
             inset: 6pt,
@@ -542,17 +516,19 @@
             fill: fill,
             stroke: stroke,
             text(
-                font: fonts.code.name,
-                size: .75em,
+                font: title.at("font", default: fonts.code.name),
+                size: title.at("size", default: .75em),
+                fill: title.at("fill", default: luma(80)),
+                weight: title.at("weight", default: "regular"),
                 {
               if filename != none {
                 filename
               }
-              if filename != none and lang != none {
+              if filename != none and effective-lang != none {
                 " | "
               }
-              if lang != none {
-                lang
+              if effective-lang != none {
+                effective-lang
               }
             })
           )

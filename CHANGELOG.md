@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.6] - 2026-05-13
+
+### Added
+
+- **`#no-numbering()`**: Suppresses the numbering prefix on the immediately following heading (any level). The heading retains its normal styling and font size; only the counter is omitted. Mirrors the existing `#no-big-title()` API.
+- **`#code()` `numbering: auto`**: The `numbering` parameter now accepts `auto` in addition to `true`/`false`. `auto` hides line numbers when the block contains a single line.
+
+### Changed
+
+- **`#code()` title API**: The four separate title params (`title`, `title-align`, `title-style`, `title-inset`) have been merged into a single dict `title: (:)` with keys `font`, `size`, `fill`, and `weight`. Makes the API consistent with `text-style` and `number-style`.
+- **Heading layout**: Sub-headings (level 2+) are now rendered in an explicit `block` with per-level font sizes (`1.2em` down to `0.9em`) instead of relying on Typst's built-in hanging indent, which produced inconsistent indentation at deeper levels. Numbering format strings also had cosmetic leading spaces removed.
+
+## [1.6.5] - 2026-04-20
+
+### Added
+
+- **`#no-big-title()`**: Cancels the decorative chapter formatting for the immediately following `=` heading, rendering it as a plain level-1 heading instead.
+- **Nullable `date`**: The `date` parameter on the cover now accepts `none` to omit the date entirely.
+- **`last-updated-date`**: New cover parameter to display a "last updated" date alongside the start date when the document spans multiple dates.
+
 ## [1.6.4] - 2026-03-04
 ## [1.6.3] - 2026-03-04
 
