@@ -30,23 +30,47 @@
 // Global font size setting
 #let body-font-size = 12pt
 
-// State to skip big-title formatting for the next level-1 heading
-#let _no-big-title-state = state("no-big-title", false)
+// Metadata markers for heading variants.
+// These avoid the read-then-write-in-context pattern that causes convergence warnings.
 
 /**
  * Cancel the decorative chapter formatting for the immediately following `=` heading.
  * The heading will render as a plain level-1 heading instead.
  */
-#let no-big-title() = _no-big-title-state.update(true)
-
-// State to suppress numbering for the next heading (any level)
-#let _no-numbering-state = state("no-numbering", false)
+#let no-big-title() = [#metadata("cnam-no-big-title")<_cnam-no-big-title>]
 
 /**
- * Suppress the numbering prefix for the immediately following heading (any level).
- * The heading retains its normal styling and font size — only the number is omitted.
+ * For `=` headings: render with full decorative styling but without the "Chapitre/Chapter N"
+ * label and without incrementing the chapter counter.
+ * For `==` and deeper headings: suppress the numbering prefix (e.g. "I -").
+ * In both cases the heading retains its normal font size and appears in the outline.
  */
-#let no-numbering() = _no-numbering-state.update(true)
+#let no-numbering() = [#metadata("cnam-no-numbering")<_cnam-no-numbering>]
+
+// Returns true when a marker with label `lbl` immediately precedes the heading at `loc`,
+// i.e. the last such marker is placed after the last heading of ANY level. This is a
+// LOCAL test: a marker only affects the heading it directly precedes, never a later one
+// that happens to have an intervening heading. Pure query (no state writes) -> no
+// convergence risk. Must be called from within a `context` block.
+#let _immediately-preceded-by(lbl, loc) = {
+  let markers = query(selector(lbl).before(loc))
+  if markers.len() == 0 { return false }
+  let prev-heads = query(selector(heading).before(loc, inclusive: false))
+  if prev-heads.len() == 0 { return true }
+  let mp = markers.last().location().position()
+  let hp = prev-heads.last().location().position()
+  (mp.page > hp.page) or (mp.page == hp.page and mp.y > hp.y)
+}
+
+// Decrement function for `counter(heading).update`: a masked (no-numbering) heading gives
+// back the number it consumed so its numbered siblings stay consecutive (I, II, ...) and
+// numbered chapters keep counting without gaps. Operates on the heading's own (deepest)
+// level component, so deeper-level resets are handled by Typst's hierarchical counter.
+#let _give-back-number(..nums) = {
+  let m = nums.pos()
+  m.at(m.len() - 1) = calc.max(m.last() - 1, 0)
+  m
+}
 
 #let page-margin = (
     top: 2.5cm,
@@ -62,12 +86,14 @@
  * @param secondary-color - The secondary theme color
  * @param body-font - The body font family
  * @param title-font - The title/heading font family
+ * @param inline-raw-font - The font for inline code elements
  * @param author - The document author
  * @param color-words - Array of words to highlight with primary color
  * @param show-secondary-header - Whether to show secondary headers (with sub-heading)
  * @param language - Language code ("fr" for French, "en" for English)
  * @param margin - Page margin dictionary
  * @param page-number-color - Color for page numbers (auto = default text color)
+ * @param print - When true, strips link color and underline for print output
  * @param body - The document content
  */
 #let apply-styling(
@@ -75,12 +101,14 @@
   secondary-color,
   body-font,
   title-font,
+  inline-raw-font,
   author,
   color-words,
   show-secondary-header,
   language,
   margin,
   page-number-color,
+  print,
   body
 ) = {
   // Main document settings
@@ -132,7 +160,8 @@
   set text(font: body-font.name, weight: body-font.weight, size: body-font-size)
 
   // Figure customization
-  set figure.caption(separator: [ --- ], position: top)
+  set figure.caption(separator: [ \- ], position: bottom)
+  show figure.caption: set text(fill: primary-color, weight: "bold")
 
   // Headings styling
   show heading: set text(font: title-font.name, weight: title-font.weight, fill: primary-color)
@@ -156,17 +185,19 @@
   show heading: it => {
     if it.level == 1 {
       context {
-        let skip = _no-big-title-state.at(here())
-        if skip [
-          #_no-big-title-state.update(false)
+        if _immediately-preceded-by(<_cnam-no-big-title>, it.location()) [
           #set text(size: 1.2em)
           #it
-        ] else if _no-numbering-state.at(here()) [
-          #_no-numbering-state.update(false)
+        ] else if _immediately-preceded-by(<_cnam-no-numbering>, it.location()) [
+          // Masked chapter: keep the decorative style but drop the "Chapitre N" label and
+          // give back the number so numbered chapters keep counting without a gap. The
+          // give-back is emitted after the pagebreak so it lands past the heading's own
+          // counted position (a pagebreak before it would place it too early).
           #set text(size: 1.5em)
           #set align(center)
           #set block(spacing: 0.6cm)
           #pagebreak(weak: false)
+          #counter(heading).update(_give-back-number)
           #v(-(margin.top / 2))
           #thin-line(primary-color)
           #it.body
@@ -180,10 +211,12 @@
           #v(-(margin.top / 2))
 
           #context {
-            if heading.numbering != none [
-              #let heading_num = counter(heading).at(here()).at(0)
-              #linguify("chapter", from: translations-database) #heading_num
-            ]
+            if heading.numbering != none {
+              // Masked chapters gave their number back, so the live counter already holds
+              // the visible chapter number.
+              let chapter-num = counter(heading).at(here()).at(0)
+              [#linguify("chapter", from: translations-database) #chapter-num]
+            }
           }
 
           #thin-line(primary-color)
@@ -198,22 +231,49 @@
       block(above: 1.2em, below: 0.9em, sticky: true, width: 100%)[
         #set text(size: heading-size)
         #context {
-          let skip-num = _no-numbering-state.at(it.location())
-          if skip-num {
-            _no-numbering-state.update(false)
+          if _immediately-preceded-by(<_cnam-no-numbering>, it.location()) {
+            // Masked sub-heading: suppress the prefix and give back the number so its
+            // numbered siblings stay consecutive (I.I, I.II, ...) regardless of how many
+            // masked siblings are interleaved.
+            counter(heading).update(_give-back-number)
+          } else if it.numbering != none {
+            numbering(it.numbering, ..counter(heading).at(it.location()))
+            h(0.3em)
           }
-          if it.numbering != none and not skip-num [
-            #numbering(it.numbering, ..counter(heading).at(it.location()))
-            #h(0.3em)
-          ]
           it.body
         }
       ]
     }
   }
 
+  // Heading reference styling.
+  // The template's heading numbering bakes a trailing " -" into every number
+  // (e.g. "VIII -"), which the default `@ref` rendering drags into the reference
+  // ("Section VIII -"). Re-render heading references with a clean roman numeral and
+  // no dash, mirroring the numbering scheme above at each level.
+  show ref: it => {
+    let el = it.element
+    if el == none or el.func() != heading {
+      return it
+    }
+    let nums = counter(heading).at(el.location())
+    let formatted = if el.level == 1 {
+      numbering("I", ..nums)
+    } else if el.level == 2 {
+      numbering("I", nums.last())
+    } else if el.level == 3 {
+      numbering("I.I", nums.at(1), nums.last())
+    } else {
+      numbering("I.I.1", nums.at(1), nums.at(2), nums.last())
+    }
+    link(el.location())[Section #formatted]
+  }
+
   // Link styling
-  show link: it => underline(text(fill: primary-color, it))
+  show link: it => if print { it.body } else { underline(text(fill: primary-color, it)) }
+  if print {
+    show underline: it => it.body
+  }
 
   // List styling
   set enum(indent: 1em, numbering: n => [#text(fill: primary-color, numbering("1.", n))])
@@ -237,7 +297,7 @@
 
   // Inline code styling
   let side-padding = .35em;
-  show raw.where(block: false) : it => h(side-padding) + box(fill: primary-color.lighten(90%), outset: (x: .25em, y: .5em), radius: 2pt, it) + h(side-padding)
+  show raw.where(block: false) : it => h(side-padding) + box(fill: primary-color.lighten(90%), outset: (x: .25em, y: .35em), radius: 2pt, text(font: inline-raw-font.name, weight: inline-raw-font.weight, it.text)) + h(side-padding)
 
   // Outline styling
   set outline(indent: n => n * 0.5em)
@@ -308,6 +368,7 @@
 #let create-title-page(
   title,
   subtitle,
+  subsubtitle,
   author,
   affiliation,
   class,
@@ -344,19 +405,25 @@
     v(cover.padding)
 
     // Title
-    align(center, text(font: cover.title.font, cover.title.size, weight: cover.title.weight, fill: cover.title.color, title))
+    align(cover.title.align, text(font: cover.title.font, cover.title.size, weight: cover.title.weight, fill: cover.title.color, title))
 
     // Subtitle
     if subtitle != none and subtitle != "" {
       v(cover.spacing)
-      align(center, text(font: cover.subtitle.font, cover.subtitle.size, weight: cover.subtitle.weight, fill: cover.subtitle.color, subtitle))
+      align(cover.subtitle.align, text(font: cover.subtitle.font, cover.subtitle.size, weight: cover.subtitle.weight, fill: cover.subtitle.color, subtitle))
+    }
+
+    // Subsubtitle
+    if subsubtitle != none and subsubtitle != "" {
+      v(cover.spacing)
+      align(cover.subsubtitle.align, text(font: cover.subsubtitle.font, cover.subsubtitle.size, weight: cover.subsubtitle.weight, fill: cover.subsubtitle.color, subsubtitle))
     }
 
     // Date
     if start-date != none {
       v(cover.spacing)
       align(
-          center,
+          cover.date.align,
           text(font: cover.date.font, weight: cover.date.weight, cover.date.size, fill: cover.date.color,
             if last-updated-date == none or not cover.date.range or start-date == last-updated-date {
               date-format(start-date)
@@ -401,9 +468,9 @@
   }
 
   place(
-    bottom + center,
+    bottom + cover.author.align,
     dy: 5%,
-    align(center)[
+    align(cover.author.align)[
       #bottom-text
     ]
   )

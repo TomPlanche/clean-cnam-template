@@ -53,7 +53,7 @@ This template uses the following external packages:
 
    - Using the published package (as in `main.typ`):
    ```typst
-   #import "@preview/clean-cnam-template:1.6.4": *
+   #import "@preview/clean-cnam-template:1.6.7": *
    ```
 
    - Using this repository locally (from `src/`):
@@ -86,9 +86,10 @@ The `clean-cnam-template` function accepts the following parameters:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `title` | string | `""` | Document title |
-| `subtitle` | string | `""` | Document subtitle |
-| `author` | string / dict / array | `""` | Author name(s). Accepts a plain string, a dict `(name: "..", orcid: (id: "..", name: ".."))`, or a mixed array of both. When `orcid.id` is present, a clickable ORCID link is rendered on the cover. |
+| `title` | string | `""` | Document title. Can also be set via `cover.title.text` (cover value takes priority). |
+| `subtitle` | string | `""` | Document subtitle. Can also be set via `cover.subtitle.text` (cover value takes priority). |
+| `subsubtitle` | string | `""` | Optional third cover line rendered below the subtitle in a smaller style. Can also be set via `cover.subsubtitle.text`. Omitted when empty. |
+| `author` | string / dict / array | `""` | Author name(s). Accepts a plain string, a dict `(name: "..", orcid: "..", email: "..")`, or a mixed array. Rendering: email only → underlined `mailto:` link; orcid only → name + icon linked to orcid.org; both → name links to `mailto:`, ORCID icon links separately to orcid.org. |
 | `affiliation` | string | `""` | Author's affiliation/institution |
 | `year` | int | current year | Year for school year calculation |
 | `class` | string/none | `none` | Class/course name |
@@ -103,6 +104,7 @@ The `clean-cnam-template` function accepts the following parameters:
 | `code-font` | object | `(name: "Zed Plex Mono", weight: 400)` | Code block font object |
 | `show-secondary-header` | bool | `true` | Show secondary headers |
 | `outline-code` | content/bool/none | `none` | Custom outline configuration |
+| `print` | bool | `false` | Strip link color, underline, and glossary markers for print output |
 | `cover` | dictionary | `(:)` | Cover page configuration (see [Cover Page](#cover-page-customization)) |
 
 ## Advanced Configuration
@@ -122,19 +124,24 @@ The `cover` parameter lets you control the cover page background, decorative cir
 | `spacing` | length | `1em` | Space between elements (title, subtitle, date) |
 | `title` | dictionary | see below | Title text configuration |
 | `subtitle` | dictionary | see below | Subtitle text configuration |
+| `subsubtitle` | dictionary | see below | Subsubtitle text configuration (omitted when `text` / top-level param is empty) |
 | `date` | dictionary | see below | Date text configuration |
 | `author` | dictionary | see below | Author/affiliation text configuration |
 
 #### Element Dictionaries
 
-All four element dictionaries (`title`, `subtitle`, `date`, `author`) share these keys:
+All five element dictionaries (`title`, `subtitle`, `subsubtitle`, `date`, `author`) share these keys:
 
-| Key | Type | title | subtitle | date | author |
-|-----|------|-------|----------|------|--------|
-| `color` | color/auto | `auto` (`main-color`) | `auto` (title color) | `auto` (title color) | `auto` (title color) |
-| `weight` | int/string/auto | `700` | `700` | `auto` (`body-font` weight) | `"bold"` |
-| `size` | length | `2.5em` | `2em` | `1.1em` | `14pt` |
-| `font` | string/auto | `auto` (`title-font`) | `auto` (`title-font`) | `auto` (`body-font`) | `auto` (`body-font`) |
+| Key | Type | title | subtitle | subsubtitle | date | author |
+|-----|------|-------|----------|-------------|------|--------|
+| `text` | string | — | — | — | n/a | n/a |
+| `color` | color/auto | `auto` (`main-color`) | `auto` (title color) | `auto` (subtitle color) | `auto` (title color) | `auto` (title color) |
+| `weight` | int/string/auto | `700` | `700` | `400` | `auto` (`body-font` weight) | `"bold"` |
+| `size` | length | `2.5em` | `2em` | `1.4em` | `1.1em` | `14pt` |
+| `font` | string/auto | `auto` (`title-font`) | `auto` (`title-font`) | `auto` (`body-font`) | `auto` (`body-font`) | `auto` (`body-font`) |
+| `align` | alignment | `center` | `center` | `center` | `center` | `center` |
+
+The `text` key is available on `title`, `subtitle`, and `subsubtitle`. When present it overrides the corresponding top-level parameter, letting you keep all cover-page concerns in one place.
 
 The `date` dictionary also accepts:
 
@@ -181,6 +188,18 @@ Custom fonts and sizes while keeping default colors:
 )
 ```
 
+Title and subtitle content alongside their styling (everything in one place):
+
+```typst
+#show: clean-cnam-template.with(
+  // top-level title/subtitle can be omitted when using cover.title.text / cover.subtitle.text
+  cover: (
+    title: (text: "My Report", font: "Inter Display", weight: 800, size: 3em),
+    subtitle: (text: "First year of apprenticeship", font: "Inter"),
+  ),
+)
+```
+
 Partial overrides work at every level. For example, `cover: (title: (size: 3em))` only changes the title size -- color, weight, and font keep their defaults.
 
 The title color cascades: setting `cover: (title: (color: white))` also applies white to the subtitle and the horizontal lines, unless the subtitle explicitly overrides its own color.
@@ -191,10 +210,13 @@ The template includes centralized font management that allows you to set consist
 
 ```typst
 #show: clean-cnam-template.with(
-  default-font: (name: "Inter", weight: 400),              // Sets default font (fallback for body and title)
-  body-font: (name: "Inter", weight: 400),                 // Optional: body text font (defaults to default-font)
-  title-font: (name: "Inter Display", weight: 600),        // Optional: title font (defaults to default-font)
-  code-font: (name: "JetBrains Mono", weight: 400),        // Sets code block font
+  fonts: (
+    default: (name: "Inter", weight: 400),              // Base fallback for body and title
+    body: (name: "Inter", weight: 400),                 // Body text (auto = default)
+    title: (name: "Inter Display", weight: 600),        // Titles and headings (auto = default)
+    code: (name: "JetBrains Mono", weight: 400),        // Code blocks
+    inline-raw: (name: "JetBrains Mono", weight: 400),  // Inline code (auto = body)
+  ),
   // ... other parameters
 )
 ```
@@ -208,8 +230,22 @@ The template uses a hierarchical font system:
 - `body-font` is used for body text and defaults to `default-font` if not specified
 - `title-font` is used for titles and headings and defaults to `default-font` if not specified
 - `code-font` is used for all code blocks and monospace text
+- `inline-raw` is used for inline code (`\`backtick\`` spans) and defaults to `body-font`
 
 This allows you to use different fonts and weights for body text and headings while maintaining a fallback to `default-font`.
+
+### Print Mode
+
+Set `print: true` to produce output suitable for printing. This:
+- Strips the primary-color fill and underline from all links (by returning the link body directly, which also suppresses glossary entry markers such as the superscript `g` from `@preview/glossarium`).
+- Strips all `underline()` wrappers document-wide, covering glossary packages that wrap the link in an underline rather than embedding it inside the link body.
+
+```typst
+#show: clean-cnam-template.with(
+  // ... other parameters
+  print: true,
+)
+```
 
 ### Color Highlighting
 
@@ -246,6 +282,51 @@ The template automatically formats date ranges. If `start-date` and `last-update
   last-updated-date: datetime(day: 15, month: 12, year: 2024),
   // Displays: 01/09/2024 - 15/12/2024
 )
+```
+
+## Heading Variants
+
+Three functions modify the rendering of the immediately following heading.
+
+### `#no-numbering()`
+
+Behavior depends on the heading level:
+
+- **`=` headings**: renders with the full decorative chapter style (pagebreak, thin lines, centered) but without the "Chapitre/Chapter N" label and without incrementing the chapter counter. Numbered chapters that follow get the correct number.
+- **`==` and deeper**: suppresses the numbering prefix (e.g. `I -`, `I.I -`) while keeping the normal heading style.
+
+```typst
+#no-numbering()
+= Remerciements      // decorative style, no "Chapitre N", not counted
+
+#no-numbering()
+= Introduction       // same
+
+= Analyse            // "Chapitre 1"
+= Conclusion         // "Chapitre 2"
+
+#no-numbering()
+== Remarque          // sub-heading without "I -" prefix
+```
+
+### `#no-big-title()`
+
+Renders the immediately following `=` heading as a plain level-1 heading, skipping the decorative chapter formatting entirely.
+
+```typst
+#no-big-title()
+= Annexes            // plain heading, no pagebreak, no decorative lines
+```
+
+## Cross-References
+
+References to headings via `@label` are rendered as `Section <roman-numeral>` with a clean roman numeral that mirrors the heading numbering scheme (`I`, `I.I`, `I.I.1`). The trailing `" -"` that appears in the heading numbers themselves is stripped from references, so `@analyse` renders as `Section I` rather than `Section I -`. Non-heading references keep their default rendering.
+
+```typst
+= Analyse <analyse>
+== Méthode <methode>
+
+See @analyse and @methode.   // "See Section I and Section I.I."
 ```
 
 ## Custom Outline
@@ -311,7 +392,7 @@ The `code()` function supports many customization options:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `lang` | string/none | `none` | Programming language for syntax highlighting |
+| `lang` | string/none | `none` | Label to display in the top bar. When `none`, the bar is hidden but syntax highlighting still uses the raw block's own `lang` attribute. When the bar is hidden (no `lang` and no `filename`), the block gets fully rounded corners on all sides. |
 | `filename` | string/none | `none` | Optional filename to display |
 | `numbering` | bool | `true` | Whether to show line numbers |
 | `line-spacing` | length | `5pt` | Vertical spacing between lines |
@@ -438,9 +519,23 @@ Formats a datetime object to French format (DD/MM/YYYY).
 
 ## Recent Updates
 
-### v1.6.4 - Cover Page Improvements (Latest)
-- **ORCID author links**: The `author` parameter now accepts a dict or mixed array with an `orcid` field; a clickable ORCID link is rendered on the cover when provided
-- **Second cover logo**: New `second-logo` key in `cover.decorations` places a secondary logo inside the top-left circle decoration
+### v1.6.7 - Print Mode + Inline Raw Font + Unified Cover API + Subsubtitle + Author Email + Alignment Control (Latest)
+- **Clean heading cross-references**: `@label` references to headings now render as `Section <roman-numeral>` without the trailing `" -"` baked into the heading numbering.
+- **`align` control**: New `align` parameter for `title`, `subtitle`, `subsubtitle`, `date`, and `author` in the `cover` dictionary. Allows independent alignment control for cover elements (defaults to `center`).
+- **`print: true`**: Strips link color, underline, and glossary entry markers (e.g. superscript `g` from `@preview/glossarium`) for clean print output.
+- **`fonts.inline-raw`**: New font key for inline code. Defaults to `auto` (cascades from `body`), so inline code now uses the body font by default instead of the code font.
+- **Author `email` / `mail`**: Author dicts now accept an `email` or `mail` key; the name is rendered as an underlined `mailto:` link when no ORCID is set.
+- **`subsubtitle`**: New optional third cover line rendered below the subtitle in a smaller, lighter style. Controlled via `subsubtitle: "..."` or `cover.subsubtitle: (text: "...", size: ..., ...)`.
+- **`cover.title.text` and `cover.subtitle.text`**: Title and subtitle content can now live inside the `cover` dict alongside their styling options, eliminating the need to split content (top-level) from presentation (`cover`). The top-level `title` and `subtitle` parameters remain supported as a shorter alias when no cover-specific styling is needed.
+
+### v1.6.7 - Extended `#no-numbering()` + Convergence Fix (Latest, continued)
+- **`#no-numbering()` extended**: For `=` headings, now renders with the decorative chapter style but without the "Chapitre N" label and without incrementing the chapter counter. Numbered chapters after it resume from the correct number. Sub-heading behavior is unchanged.
+- **Convergence fix**: `#no-big-title()` and `#no-numbering()` now use metadata markers instead of boolean states, eliminating the "layout did not converge" warning.
+
+### v1.6.6 - Heading and Code Improvements
+- **`#no-numbering()`**: Suppresses the numbering prefix on the immediately following heading
+- **`#code()` `numbering: auto`**: Hides line numbers for single-line blocks
+- **`#code()` title API**: Four separate title params merged into a single `title` dict
 
 ### v1.6.2 - Math and Block Styling
 - **`my-block` body styling**: New `body-style` parameter for body text customization

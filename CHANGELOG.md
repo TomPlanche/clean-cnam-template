@@ -5,6 +5,104 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-05-13
+
+### Added
+
+- **Clean heading cross-references**: References to headings via `@label` now render as `Section <roman-numeral>` (e.g. `Section VIII`) instead of dragging the trailing `" -"` from the template's heading numbering into the reference (which previously produced `Section VIII -`). The roman numeral mirrors the heading numbering scheme at each level (`I`, `I.I`, `I.I.1`). Non-heading references are unaffected.
+
+  ```typst
+  = Analyse <analyse>
+  == Méthode <methode>
+
+  Voir @analyse et @methode.   // "Voir Section I et Section I.I."
+  ```
+
+- **`#no-numbering()` extended**: For `=` headings, now renders with the full decorative chapter style but without the "Chapitre/Chapter N" label and without incrementing the chapter counter. Subsequent numbered chapters continue from where they left off. For `==` and deeper headings the existing behavior is unchanged (suppresses the numbering prefix).
+
+  ```typst
+  #no-numbering()
+  = Remerciements        // no label, not counted
+
+  #no-numbering()
+  = Introduction         // no label, not counted
+
+  = Chapitre I           // "Chapitre 1"
+  = Chapitre II          // "Chapitre 2"
+  ```
+
+- **Convergence fix for heading variants**: `#no-big-title()` and `#no-numbering()` now use invisible metadata markers queried by position instead of boolean states that were read and written inside the same `context` block. This eliminates the "layout did not converge within 5 attempts" warning that appeared when any of these functions was used.
+
+- **`align` parameter for cover elements**: New `align` key added to `title`, `subtitle`, `subsubtitle`, `date`, and `author` dictionaries within the `cover` configuration. Allows overriding the default center alignment for each element independently.
+
+- **`print` mode**: New boolean parameter (`print: false` by default). When `true`, produces clean output suitable for printing:
+  - Strips color and underline from all links (returns `it.body` directly, preventing inner show-rules from running, which also suppresses glossary entry markers such as the superscript `g` from `@preview/glossarium`).
+  - Strips all `underline()` wrappers via a `show underline` rule, covering cases where a glossary package wraps the link in an underline rather than placing it inside the link body.
+
+  ```typst
+  #show: clean-cnam-template.with(
+    print: true,
+    // ... other parameters
+  )
+  ```
+
+- **`fonts.inline-raw`**: New font key for inline code elements (`raw.where(block: false)`). Accepts a font object `(name: "..", weight: 400)` and defaults to `auto`, which cascades from `fonts.body`. Inline code is now rendered in the body font by default instead of the code font, keeping it visually consistent with surrounding text while still applying the highlight box.
+
+  ```typst
+  fonts: (inline-raw: (name: "JetBrains Mono", weight: 400))
+  ```
+
+- **Author `email` / `mail` field**: Author dicts now accept an `email` (or `mail`) key. The rendering depends on what is provided:
+  - email only — name is rendered as an underlined `mailto:` link
+  - orcid only — existing behavior: name and ORCID icon combined into one link to orcid.org
+  - both — name links to `mailto:`, ORCID icon links separately to orcid.org
+
+  ```typst
+  author: (name: "Tom Planche", email: "tom@example.com")
+  // both: name → mailto, icon → orcid.org
+  author: (name: "Tom Planche", email: "tom@example.com", orcid: "0009-0005-6032-3201")
+  ```
+
+- **`subsubtitle`**: New optional third line of cover text rendered below the subtitle in a smaller, lighter style. Accepts either a top-level `subsubtitle` string or `cover.subsubtitle.text` (cover value takes priority). Like `title` and `subtitle`, its appearance is fully controlled via the `cover.subsubtitle` dict (`color`, `weight`, `size`, `font`). Color cascades from the subtitle color; font defaults to the body font.
+
+  ```typst
+  subsubtitle: "Promotion 2024-2026",
+  // or, co-located with styling:
+  cover: (
+    subsubtitle: (text: "Promotion 2024-2026", size: 1.2em, weight: 300),
+  )
+  ```
+
+### Changed
+
+- **`#code()` `lang` parameter**: Passing `lang: none` (the default) now hides the language label in the top bar while still using the raw block's own `lang` attribute for syntax highlighting. Previously, omitting `lang` caused the language to be inferred from the raw block and displayed in the label. Syntax highlighting is unaffected in all cases.
+
+- **`#code()` corner radius**: When no top bar is shown (neither `lang` nor `filename` provided), the code block now uses fully rounded corners on all sides instead of only the bottom corners.
+
+- **`#code()` kept whole across pages**: New `breakable` parameter (`auto` by default). With `auto`, a code block that fits within a single page is no longer split across a page boundary; it is pushed to the next page and rendered whole (like an implicit `pagebreak()`). Blocks taller than a page still break normally to avoid overflowing. Pass `breakable: true` to restore the previous always-splittable behavior, or `breakable: false` to force keeping it whole.
+
+  ```typst
+  #code(lang: "Rust", source)               // auto: kept whole when it fits
+  #code(breakable: true, lang: "Rust", source)  // may split across pages
+  ```
+
+- **Unified title and subtitle API**: The `cover.title` and `cover.subtitle` dicts now accept an optional `text` key that, when present, overrides the top-level `title` and `subtitle` parameters. This lets you co-locate cover content and its styling in one place:
+
+  ```typst
+  cover: (
+    title: (text: "My Report", font: "Inter Display", size: 3em),
+    subtitle: (text: "First year", font: "Inter"),
+  )
+  ```
+
+  The top-level `title` and `subtitle` parameters remain fully supported as a shorter fallback when no cover-specific styling is needed. `cover.title.text` / `cover.subtitle.text` take priority when both are provided.
+
+### Fixed
+
+- **`#no-numbering()` on a sub-section no longer de-numbers later chapters**: Detection of a "no-numbering" `=` heading is now LOCAL. Previously, a single `#no-numbering()` placed anywhere (typically on a `==`/`===` sub-section) caused every following chapter to lose its "Chapitre/Chapter N" label and shifted the chapter count. A level-1 heading is now treated as no-numbering only when a marker immediately precedes it (no other heading in between), using the same locality rule already applied to deeper headings.
+
+- **`#no-numbering()` no longer advances the visible number of sibling headings**: A masked heading now gives its number back via `counter(heading).update(...)` instead of only hiding the display. Numbered headings of the same level under the same parent stay consecutive (`I.I`, `I.II`, ...) regardless of how many `#no-numbering()` siblings are interleaved, and numbered chapters keep counting without gaps. This unifies the counter logic across level 1 and deeper levels around a single source of truth (Typst's own heading counter), replacing the previous separate skipped-chapter counter and display-time subtraction. The change preserves the convergence-safe pattern (no read-then-write inside `context`).
+
 ## [1.6.6] - 2026-05-13
 
 ### Added

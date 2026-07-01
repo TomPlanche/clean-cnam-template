@@ -11,6 +11,7 @@
   body: (name: "New Computer Modern Math", weight: 400),
   title: (name: "New Computer Modern Math", weight: 400),
   code: (name: "Zed Plex Mono", weight: 400),
+  inline-raw: (name: "New Computer Modern Math", weight: 400),
 ))
 
 /**

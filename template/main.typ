@@ -1,11 +1,12 @@
 
-#import "@local/clean-cnam-template:1.6.4": *
+#import "@preview/clean-cnam-template:1.6.7": *
 
 #show: clean-cnam-template.with(
   title: "Main Title",
   author: "Tom Planche",
   class: "Class name",
   subtitle: "Class subtitle",
+  subsubtitle: "Class subtitle",
   logo: image("./assets/cnam_logo.svg"),
   start-date: datetime(day: 7, month: 9, year: 2025),
   colors: (main: "#C4122E"),

@@ -337,6 +337,7 @@
  * @param text-style - Text styling for the code body: (size, font, fill) (default: (size: 8pt, font: "Zed Plex Mono"))
  * @param width - Block width, can be length or percentage (default: 100%)
  * @param block-align - The alignment of the block itself (default: left)
+ * @param breakable - Whether the code block may split across pages: true, false, or auto. With auto, the block is kept whole (pushed to the next page) when it fits within a single page, and only allowed to break when it is taller than a page (default: auto)
  * @param lines - Line range to display: (start, end) or auto for all (default: auto)
  * @param lang - Programming language for syntax highlighting (default: none)
  * @param filename - Optional filename to display before the language (default: none)
@@ -357,6 +358,7 @@
   text-style: (size: 8pt, font: "Zed Plex Mono"),
   width: 100%,
   block-align: left,
+  breakable: auto,
   lines: auto,
   lang: none,
   filename: none,
@@ -417,15 +419,8 @@
   let labels = extract-labels(source.text)
   let unlabelled-source = clean-source(source.text)
 
-  // Infer language from the raw block if not explicitly provided
-  // "text" is not a real language — treat it as none when inferred from the raw block
-  let effective-lang = if lang != none {
-    lang
-  } else if source.lang != none and source.lang != "text" {
-    source.lang
-  } else {
-    none
-  }
+  // effective-lang controls only the top-box label; syntax highlighting always comes from source.lang
+  let effective-lang = lang
 
   context {
     let fonts = get-fonts()
@@ -456,9 +451,10 @@
       0pt
     }
 
+    let has-top-bar = filename != none or effective-lang != none
     block(
       inset: inset,
-      radius: (bottom: radius),
+      radius: if has-top-bar { (bottom: radius) } else { radius },
       stroke: stroke,
       fill: fill,
       width: width,
@@ -502,44 +498,63 @@
   }
 
     // Create the complete code block with optional language label
+    let rendered = stack(
+      dir: ttb,
+      spacing: 0pt,
+      // Language/filename label outside and above the code block
+      if filename != none or effective-lang != none {
+        rect(
+          width: width,
+          inset: 6pt,
+          radius: (top: lang-box.at("radius", default: 3pt)),
+          fill: fill,
+          stroke: stroke,
+          text(
+              font: title.at("font", default: fonts.code.name),
+              size: title.at("size", default: .75em),
+              fill: title.at("fill", default: luma(80)),
+              weight: title.at("weight", default: "regular"),
+              {
+            if filename != none {
+              filename
+            }
+            if filename != none and effective-lang != none {
+              " | "
+            }
+            if effective-lang != none {
+              effective-lang
+            }
+          })
+        )
+      },
+      // Code block
+      raw(
+          block: true,
+          lang: source.lang,
+          unlabelled-source
+      )
+    )
+
+    // Keep the whole code block together when it fits on a single page.
+    // With `auto`, measure the rendered block against the full page height: if
+    // it fits, make it non-breakable so Typst pushes it whole onto the next
+    // page when the remaining space is too small; if it is taller than a page,
+    // allow breaking to avoid overflowing off the page.
+    //
+    // The block is measured inside a `box` of the region's width because the
+    // per-line layout uses a `1fr` table column, and `fr` units have no bounded
+    // region under `measure` (which inflates the reported height). Bounding the
+    // width makes the measurement match the rendered height.
     align(
       block-align,
-      stack(
-        dir: ttb,
-        spacing: 0pt,
-        // Language/filename label outside and above the code block
-        if filename != none or effective-lang != none {
-          rect(
-            width: width,
-            inset: 6pt,
-            radius: (top: lang-box.at("radius", default: 3pt)),
-            fill: fill,
-            stroke: stroke,
-            text(
-                font: title.at("font", default: fonts.code.name),
-                size: title.at("size", default: .75em),
-                fill: title.at("fill", default: luma(80)),
-                weight: title.at("weight", default: "regular"),
-                {
-              if filename != none {
-                filename
-              }
-              if filename != none and effective-lang != none {
-                " | "
-              }
-              if effective-lang != none {
-                effective-lang
-              }
-            })
-          )
-        },
-        // Code block
-        raw(
-            block: true,
-            lang: source.lang,
-            unlabelled-source
-        )
-      )
+      if breakable == auto {
+        layout(available => context {
+          let fits = measure(box(width: available.width, rendered)).height <= available.height
+          block(breakable: not fits, rendered)
+        })
+      } else {
+        block(breakable: breakable, rendered)
+      }
     )
   }
 }
