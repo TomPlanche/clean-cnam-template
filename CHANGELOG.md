@@ -36,6 +36,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Theme system**: `clean-cnam-template` takes a new `theme` parameter, a partial configuration dictionary applied between the defaults and your `config`. Themes are validated against the same schema, so they can touch any option, and anything a theme sets stays overridable per document. Pass an array to compose layers, later ones winning.
+
+  ```typst
+  #show: clean-cnam-template.with(
+    theme: (presets.memoire, themes.sobre),
+    config: (info: (title: "Rapport")),
+  )
+  ```
+
+  Merging is recursive, so a second layer refines the first rather than replacing it.
+
+- **Four shipped themes** (`themes`): `cnam` (the defaults, spelled out), `sobre` (no decorative circles, neutral cover text), `dark` (dark cover, white text), `monochrome` (greyscale palette for black and white printing).
+
+- **Three shipped presets** (`presets`): `article` (in-flow level-1 headings, no decorations, tighter margins), `memoire` (wider binding margin, two-level outline, date range), `tp` (11pt body, compact margins, no outline).
+
+- **`headings` configuration section**: `chapter-style` (`"decorated"` or `"plain"`), `chapter-pagebreak` and `chapter-label`. `"plain"` renders level-1 headings in the flow, using `fonts.chapter` so they still outrank level-2 headings. This is what makes the template usable for a four-page note, where the decorated chapter page was previously unavoidable.
+
+- **Development commands for themes**: `just themes` lists the shipped themes and presets with their descriptions, `just preview NAME` renders one into `docs/preview/` and opens it, `just preview-all` renders every one, and `just new-theme` / `just new-preset` scaffold a skeleton entry. The listing is read from `src/lib/themes.typ` through `typst eval`, and a `theme-catalogue` dictionary paired with import-time assertions keeps the descriptions in sync with the definitions. None of this ships in the package.
+
+- **`outline.depth`**: limits the outline to a given heading level (`none` = every level).
+
 - **Unknown configuration keys are now an error**: a typo such as `(cover: (titel: ".."))` stops the compilation with `unknown option 'config.cover.titel'` followed by the list of valid keys for that section. Previously the dictionary merge used `+`, which silently dropped unknown keys. The check is recursive, so it applies at every depth.
 
 - **Themeable components**: `blockquote`, `my-block`, `code`, `definition`, `example` and `theorem` no longer hardcode their colors. Their color parameters default to `auto` and resolve against the palette, so overriding `colors.neutral-light` restyles every block and quote at once, and overriding `colors.definition` restyles every definition. Explicit per-call colors still win. Default rendering is byte-for-byte unchanged.
@@ -55,6 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`merge-dicts()` exported**: the recursive, validating merge used internally.
 
 ### Fixed
+
+- **Blank page when the outline is disabled**: with `outline.enabled: false` (formerly `outline-code: false`), the cover's page break and the first chapter's page break stacked, emitting an empty page numbered 2. Chapter breaks are now weak, which still starts every chapter on a fresh page but collapses when the current page is already empty.
 
 - **`fonts.code` was ignored by `#code()`**: the default `text-style` carried a hardcoded `font: "Zed Plex Mono"` that was spread after the configured font, so it always won. The default no longer sets a font, and `fonts.code` reaches the code body as documented.
 

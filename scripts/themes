@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -eu
+
+. "$(dirname "${BASH_SOURCE[0]}")/setup"
+
+if [[ "${1:-}" == "help" ]]; then
+  echo "themes"
+  echo ""
+  echo "Lists the themes and document presets shipped by the template, with a one-line"
+  echo "description for each. The listing is read from 'src/lib/themes.typ' itself, so it"
+  echo "cannot drift from the definitions."
+  echo ""
+  echo "Use a name with 'just preview NAME' to render it."
+  exit 1
+fi
+
+typst eval --root "$ROOT" \
+  '{ import "/src/lib/themes.typ": theme-catalogue; theme-catalogue }' |
+  python3 -c '
+import json, sys
+
+catalogue = json.load(sys.stdin)
+width = max(len(name) for group in catalogue.values() for name in group)
+
+for label, entries in (("THEMES", "themes"), ("PRESETS", "presets")):
+    print(label)
+    for name, description in catalogue[entries].items():
+        print(f"  {name:<{width}}  {description}")
+    print()
+'

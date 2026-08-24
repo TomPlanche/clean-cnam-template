@@ -18,6 +18,26 @@ test *args:
 update *args:
   tt update {{ args }}
 
+# list the shipped themes and document presets
+themes:
+  ./scripts/themes
+
+# render a theme or preset and open it (name from `just themes`, or "none" / "all")
+preview name="cnam" *args:
+  ./scripts/preview "{{ name }}" {{ args }}
+
+# render every theme and preset into docs/preview/
+preview-all:
+  ./scripts/preview all
+
+# add a skeleton theme to src/lib/themes.typ
+new-theme name:
+  ./scripts/new-theme theme "{{ name }}"
+
+# add a skeleton document preset to src/lib/themes.typ
+new-preset name:
+  ./scripts/new-theme preset "{{ name }}"
+
 # package the library into the specified destination folder
 package target:
   ./scripts/package "{{target}}"

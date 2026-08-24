@@ -50,18 +50,33 @@
  * - `cover`: bg, decorations, second-logo (image, scale, dx, dy), padding, spacing, and one
  *   dict per element (title, subtitle, subsubtitle, date, author) with text, color, weight,
  *   size, font and align. A `text` key overrides the matching `info` field.
- * - `outline`: enabled, custom (content rendered instead of the default outline), indent.
+ * - `headings`: chapter-style ("decorated" or "plain"), chapter-pagebreak, chapter-label.
+ * - `outline`: enabled, custom (content rendered instead of the default outline), indent, depth.
  * - `lang`, `print`, `color-words`, `show-secondary-header`.
  *
+ * A theme is a partial configuration dictionary applied between the defaults and `config`,
+ * so anything a theme sets can still be overridden per document. Pass an array to compose
+ * several, the later ones winning:
+ *
+ * ```typst
+ * #show: clean-cnam-template.with(
+ *   theme: (presets.memoire, themes.sobre),
+ *   config: (info: (title: "Rapport")),
+ * )
+ * ```
+ *
+ * @param theme - A configuration dictionary, or an array of them, applied under `config`
  * @param config - Partial configuration dictionary, merged over `default-config`
  * @param body - Document content
  */
 #let clean-cnam-template(
+  theme: none,
   config: (:),
   body,
 ) = {
-  // Merge over the defaults, reject unknown keys, resolve every `auto` cascade
-  let cfg = resolve-config(config)
+  // Layers, by increasing priority: defaults, each theme, then `config`.
+  // Unknown keys are rejected at every layer, then every `auto` cascade is resolved.
+  let cfg = resolve-config(config, theme: theme)
 
   // Publish the resolved config so components can follow the theme
   set-config(cfg)

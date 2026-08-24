@@ -96,10 +96,20 @@
     author: (color: auto, weight: "bold", size: 14pt, font: auto, align: center),
   ),
 
+  // Level-1 heading rendering
+  headings: (
+    // "decorated": the centered chapter page (rules, "Chapitre N", own font size)
+    // "plain": a normal in-flow level-1 heading, as `#no-big-title()` produces
+    chapter-style: "decorated",
+    chapter-pagebreak: true,  // decorated only: start each chapter on a new page
+    chapter-label: true,      // decorated only: the "Chapitre N" line above the title
+  ),
+
   outline: (
     enabled: true,
     custom: none,            // content rendered instead of the default outline
     indent: auto,
+    depth: none,             // none = every level
   ),
 
   lang: "fr",
@@ -148,18 +158,41 @@
   out
 }
 
+// Normalize the `theme` argument to an array of configuration dictionaries.
+#let _theme-list(theme) = {
+  if theme == none {
+    ()
+  } else if type(theme) == dictionary {
+    (theme,)
+  } else {
+    theme
+  }
+}
+
 /**
  * Merge a user configuration over the defaults and resolve every `auto` cascade.
+ *
+ * Layers are applied in increasing order of priority: defaults, then each theme in the
+ * order given, then the user configuration. A theme is a plain (partial) configuration
+ * dictionary, validated against the schema exactly like user input, so composing
+ * `theme: (presets.memoire, themes.sobre)` lets the second refine the first.
  *
  * Resolution order matters: fonts and colors settle first, then the cover derives its own
  * values from them. After this call no `auto` remains except where `auto` is a meaningful
  * runtime value (`colors.outline`, `colors.page-number`, `outline.indent`).
  *
  * @param config - The user configuration (partial)
+ * @param theme - A configuration dictionary, or an array of them, applied under `config`
  * @returns A fully resolved configuration dictionary
  */
-#let resolve-config(config) = {
-  let cfg = merge-dicts(default-config, config)
+#let resolve-config(config, theme: none) = {
+  let cfg = default-config
+
+  for layer in _theme-list(theme) {
+    cfg = merge-dicts(cfg, layer, path: "theme")
+  }
+
+  cfg = merge-dicts(cfg, config)
 
   // Dates and academic year
   if cfg.info.start-date == auto { cfg.info.start-date = datetime.today() }

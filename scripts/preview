@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -eu
+
+. "$(dirname "${BASH_SOURCE[0]}")/setup"
+
+if (( $# < 1 )) || [[ "${1:-}" == "help" ]]; then
+  echo "preview NAME [--no-open]"
+  echo ""
+  echo "Renders 'docs/preview.typ' with the theme or preset NAME and opens the result."
+  echo "NAME is any name listed by 'just themes', or one of:"
+  echo "  none  the template defaults, with no layer applied"
+  echo "  all   every theme and preset, rendered without opening anything"
+  echo ""
+  echo "Output goes to 'docs/preview/<name>.pdf', which is git-ignored."
+  exit 1
+fi
+
+NAME="$1"
+OPEN=1
+[[ "${2:-}" == "--no-open" ]] && OPEN=0
+
+OUT_DIR="$ROOT/docs/preview"
+mkdir -p "$OUT_DIR"
+
+function render {
+  local name="$1"
+  typst compile \
+    --root "$ROOT" \
+    --input "theme=$name" \
+    "$ROOT/docs/preview.typ" \
+    "$OUT_DIR/$name.pdf"
+  echo "docs/preview/$name.pdf"
+}
+
+# Open with whatever the platform provides, and stay quiet if it provides nothing.
+function open-file {
+  local file="$1"
+  if command -v open >/dev/null 2>&1; then
+    open "$file"
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$file"
+  else
+    echo "No opener found, the file is at $file"
+  fi
+}
+
+if [[ "$NAME" == "all" ]]; then
+  # Ask the template itself which names exist, so this list never goes stale
+  names="$(typst eval --root "$ROOT" \
+    '{ import "/src/lib/themes.typ": themes, presets; (themes.keys() + presets.keys()).join(" ") }' |
+    tr -d '"')"
+
+  for name in none $names; do
+    render "$name"
+  done
+  exit 0
+fi
+
+render "$NAME"
+
+if (( OPEN == 1 )); then
+  open-file "$OUT_DIR/$NAME.pdf"
+fi

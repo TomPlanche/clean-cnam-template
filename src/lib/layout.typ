@@ -143,8 +143,25 @@
   })
 
   // Heading spacing
+  let plain-chapters = cfg.headings.chapter-style == "plain"
+  let chapter-pagebreak = cfg.headings.chapter-pagebreak
+  let chapter-label = cfg.headings.chapter-label
+
   show heading: it => {
-    if it.level == 1 {
+    if it.level == 1 and plain-chapters {
+      // Plain chapters: a normal in-flow level-1 heading, still using the chapter font so
+      // it outranks the 1.2em of a level-2 heading. A preceding `#no-numbering()` drops
+      // the prefix and gives the number back, as it does for deeper levels.
+      context [
+        #set text(font: chapter-font.name, weight: chapter-font.weight, size: chapter-font.size)
+        #if _immediately-preceded-by(<_cnam-no-numbering>, it.location()) [
+          #counter(heading).update(_give-back-number)
+          #it.body
+        ] else [
+          #it
+        ]
+      ]
+    } else if it.level == 1 {
       context {
         if _immediately-preceded-by(<_cnam-no-big-title>, it.location()) [
           #set text(size: 1.2em)
@@ -157,9 +174,9 @@
           #set text(font: chapter-font.name, weight: chapter-font.weight, size: chapter-font.size)
           #set align(center)
           #set block(spacing: 0.6cm)
-          #pagebreak(weak: false)
+          #if chapter-pagebreak { pagebreak(weak: true) }
           #counter(heading).update(_give-back-number)
-          #v(-(margin.top / 2))
+          #if chapter-pagebreak { v(-(margin.top / 2)) }
           #thin-line(primary)
           #it.body
           #thin-line(primary)
@@ -167,16 +184,18 @@
           #set align(center)
           #set block(spacing: 0.6cm)
 
-          #pagebreak(weak: false)
+          #if chapter-pagebreak { pagebreak(weak: true) }
 
-          #v(-(margin.top / 2))
+          #if chapter-pagebreak { v(-(margin.top / 2)) }
 
-          #context {
-            if heading.numbering != none {
-              // Masked chapters gave their number back, so the live counter already holds
-              // the visible chapter number.
-              let chapter-num = counter(heading).at(here()).at(0)
-              [#linguify("chapter", from: translations-database) #chapter-num]
+          #if chapter-label {
+            context {
+              if heading.numbering != none {
+                // Masked chapters gave their number back, so the live counter already
+                // holds the visible chapter number.
+                let chapter-num = counter(heading).at(here()).at(0)
+                [#linguify("chapter", from: translations-database) #chapter-num]
+              }
             }
           }
 
@@ -429,6 +448,6 @@
         link(it.element.location(), it.indented(it.prefix(), it.inner()))
       }
     }
-    outline(indent: cfg.outline.indent)
+    outline(indent: cfg.outline.indent, depth: cfg.outline.depth)
   }
 }

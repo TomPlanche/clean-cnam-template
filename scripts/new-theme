@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -eu
+
+. "$(dirname "${BASH_SOURCE[0]}")/setup"
+
+if (( $# < 2 )) || [[ "${1:-}" == "help" ]]; then
+  echo "new-theme KIND NAME"
+  echo ""
+  echo "Adds a skeleton entry to 'src/lib/themes.typ'. KIND is 'theme' or 'preset'."
+  echo ""
+  echo "The entry is appended to the matching dictionary, and a placeholder description is"
+  echo "added to 'theme-catalogue' so that the in-file consistency assertions keep passing."
+  echo "Edit both, then run 'just preview NAME' to see the result."
+  exit 1
+fi
+
+KIND="$1"
+NAME="$2"
+
+case "$KIND" in
+  theme | preset) ;;
+  *) echo "KIND must be 'theme' or 'preset', got '$KIND'" >&2; exit 1 ;;
+esac
+
+if ! [[ "$NAME" =~ ^[a-z][a-z0-9-]*$ ]]; then
+  echo "NAME must be kebab-case (lowercase, digits and dashes), got '$NAME'" >&2
+  exit 1
+fi
+
+KIND="$KIND" NAME="$NAME" FILE="$ROOT/src/lib/themes.typ" python3 <<'PY'
+import os, sys
+
+kind = os.environ["KIND"]
+name = os.environ["NAME"]
+path = os.environ["FILE"]
+
+dict_name = "themes" if kind == "theme" else "presets"
+lines = open(path).read().split("\n")
+
+def find(predicate, start=0):
+    for i in range(start, len(lines)):
+        if predicate(lines[i]):
+            return i
+    sys.exit(f"could not locate the insertion point in {path}, has the file been restructured?")
+
+# The definitions dictionary: insert before the line that closes it
+definitions = find(lambda l: l.startswith(f"#let {dict_name} = ("))
+close = find(lambda l: l == ")", definitions)
+
+if any(l.startswith(f"  {name}:") for l in lines[definitions:close]):
+    sys.exit(f"{kind} '{name}' already exists in {dict_name}")
+
+entry = (
+    [f"  {name}: ("]
+    + ([
+        "    // TODO describe the look this theme carries, then drop this comment.",
+        "    // Any key of `default-config` is accepted, and validated the same way.",
+        "    colors: (primary: cnam-red),",
+    ] if kind == "theme" else [
+        "    // TODO describe the document shape this preset carries, then drop this comment.",
+        "    // Any key of `default-config` is accepted, and validated the same way.",
+        "    page: (margin: (top: 2.5cm, right: 1.27cm, bottom: 1.75cm, left: 1.27cm)),",
+    ])
+    + ["  ),", ""]
+)
+lines[close:close] = entry
+
+# The catalogue: same treatment, one indentation level deeper
+catalogue = find(lambda l: l.startswith("#let theme-catalogue = ("))
+group = find(lambda l: l == f"  {dict_name}: (", catalogue)
+group_close = find(lambda l: l == "  ),", group)
+lines[group_close:group_close] = [f'    {name}: "TODO describe this {kind}",']
+
+open(path, "w").write("\n".join(lines))
+print(f"added {kind} '{name}' to src/lib/themes.typ")
+PY

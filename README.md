@@ -19,6 +19,7 @@ This template uses the following external packages:
 ├── src/
 │   ├── lib/               # Template library files
 │   │   ├── store.typ      # Configuration schema, defaults and document-wide state
+│   │   ├── themes.typ     # Shipped themes and document presets
 │   │   ├── config.typ     # Template entrypoint (clean-cnam-template)
 │   │   ├── components.typ # UI components (blockquote, my-block, code)
 │   │   ├── headers.typ    # Header management logic
@@ -27,6 +28,9 @@ This template uses the following external packages:
 │   │   ├── colors.typ     # Color definitions
 │   │   └── math.typ       # Mathematical environments
 │   └── lib.typ            # Main package entrypoint (local import)
+├── docs/
+│   └── preview.typ        # Demo document used by `just preview`
+├── scripts/               # Packaging and development helpers
 ├── template/
 │   └── assets/            # Static assets (logos, images)
 │       └── cnam_logo.svg  # CNAM logo
@@ -38,6 +42,7 @@ This template uses the following external packages:
 
 - **Modular Design**: Template split into logical, maintainable modules
 - **Single Configuration Object**: One nested `config` dictionary drives the whole document, and every component reads it
+- **Themes and Presets**: Composable configuration layers for the look (`sobre`, `dark`, `monochrome`) and the document shape (`article`, `memoire`, `tp`)
 - **Typo Protection**: An unknown configuration key raises an error naming the valid keys, instead of being silently ignored
 - **CNAM Branding**: Official CNAM colors and styling
 - **Themeable Components**: Blocks, quotes, code and math environments derive their colors from the palette
@@ -164,6 +169,14 @@ Components derive their shades from this palette, so overriding `neutral-light` 
 | `numbering` | string | `"1 / 1"` | Page numbering pattern |
 | `number-align` | alignment | `bottom + right` | Page number placement |
 
+#### `headings` -- level-1 heading rendering
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `chapter-style` | string | `"decorated"` | `"decorated"` opens a centered chapter page with rules and its own font size. `"plain"` renders a normal in-flow level-1 heading, still using `fonts.chapter` so it outranks a level-2 heading. |
+| `chapter-pagebreak` | bool | `true` | Decorated style only: start each chapter on a new page |
+| `chapter-label` | bool | `true` | Decorated style only: the "Chapitre N" line above the title |
+
 #### `outline` -- table of contents
 
 | Key | Type | Default | Description |
@@ -171,6 +184,7 @@ Components derive their shades from this palette, so overriding `neutral-light` 
 | `enabled` | bool | `true` | Render the table of contents after the cover |
 | `custom` | content / none | `none` | Content rendered instead of the default outline |
 | `indent` | function / auto | `auto` | Passed to Typst's `outline(indent: ..)` |
+| `depth` | int / none | `none` | Deepest level shown. `none` = every level. |
 
 #### Top-level keys
 
@@ -181,6 +195,64 @@ Components derive their shades from this palette, so overriding `neutral-light` 
 | `color-words` | array | `()` | Words automatically highlighted with the primary color |
 | `show-secondary-header` | bool | `true` | Show secondary headers |
 | `cover` | dictionary | see below | Cover page configuration (see [Cover Page](#cover-page-customization)) |
+
+### Themes and Presets
+
+A theme is a partial configuration dictionary applied *under* your own `config`. It is validated against the same schema, so it can touch any option, and anything it sets remains overridable per document.
+
+```typst
+#show: clean-cnam-template.with(
+  theme: themes.sobre,
+  config: (info: (title: "Rapport")),
+)
+```
+
+Pass an array to compose several layers. Later layers win, and your `config` always wins over all of them:
+
+```typst
+#show: clean-cnam-template.with(
+  theme: (presets.memoire, themes.sobre),
+  config: (
+    info: (title: "Rapport"),
+    cover: (title: (color: rgb("#004400"))),  // wins over the theme
+  ),
+)
+```
+
+Merging is recursive, so a second layer refines the first instead of replacing it wholesale: `themes.dark` sets `cover.title.color` and `themes.monochrome` sets `colors.primary`, and composing them keeps both.
+
+#### Visual themes (`themes`)
+
+| Name | Effect |
+|------|--------|
+| `cnam` | The template defaults, spelled out. Changes nothing, but gives a readable starting point to copy from. |
+| `sobre` | No decorative circles, neutral cover text. The primary color stays on headings, links and accents only. Suited to a dissertation handed to a jury. |
+| `dark` | Dark cover with white text, decorations kept. |
+| `monochrome` | Greyscale palette for black and white printing. Pair it with `config: (print: true)`. Syntax highlighting inside code blocks stays colored: it comes from Typst's built-in `raw` theme, not from this palette. |
+
+#### Document presets (`presets`)
+
+| Name | Effect |
+|------|--------|
+| `article` | Short pieces. Level-1 headings stay in the flow instead of opening a decorated chapter page, decorations are dropped, margins tighten to 2cm. |
+| `memoire` | A wider left margin (2.5cm) to survive binding, a two-level outline, and a date range on the cover. |
+| `tp` | Compact lab reports. 11pt body, tighter margins, no outline. |
+
+#### Writing your own
+
+A theme is just a dictionary, so there is nothing to subclass:
+
+```typst
+#let mon-theme = (
+  colors: (primary: rgb("#00539F")),
+  fonts: (title: (name: "Inter Display", weight: 700)),
+  cover: (decorations: false, title: (size: 3em)),
+)
+
+#show: clean-cnam-template.with(theme: mon-theme, config: (info: (title: "Rapport")))
+```
+
+A theme cannot compute a value from another layer (it cannot say "20% lighter than whatever primary ends up being"), because layers are merged before resolution. The `auto` cascades cover the usual cases: leaving `colors.secondary` or `cover.title.color` alone lets them derive from the final `colors.primary`, whoever set it.
 
 ### Migrating from 1.x
 
@@ -644,6 +716,22 @@ Formats a datetime object to French format (DD/MM/YYYY).
 #date-format(datetime(day: 4, month: 9, year: 2024))
 // Outputs: 04/09/2024
 ```
+
+## Development
+
+The repository ships a few `just` recipes for working on the template itself. They are not part of the published package.
+
+| Command | Effect |
+|---------|--------|
+| `just themes` | List the shipped themes and presets with their descriptions. The listing is read from `src/lib/themes.typ`, so it cannot drift. |
+| `just preview sobre` | Render `docs/preview.typ` with that theme or preset and open the PDF. `none` renders the bare defaults. |
+| `just preview-all` | Render every theme and preset into `docs/preview/`, without opening anything. |
+| `just new-theme NAME` | Append a skeleton theme to `src/lib/themes.typ`, along with its catalogue description. |
+| `just new-preset NAME` | Same, for a document preset. |
+
+`docs/preview.typ` exercises every component (headings, blocks, quotes, math environments, code, lists, figures), so anything a theme touches shows up somewhere in the output. It picks its layer from `--input theme=<name>`.
+
+Adding a theme by hand means adding it to two places in `src/lib/themes.typ`: the `themes` (or `presets`) dictionary, and `theme-catalogue`. An assertion at the bottom of the file checks the two agree, so a missing description fails the build rather than producing a half-empty listing. `just new-theme` writes both.
 
 ## Recent Updates
 
