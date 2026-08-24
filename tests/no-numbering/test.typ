@@ -3,14 +3,16 @@
 
 // Regression tests for `#no-numbering()` counter behavior.
 // See CHANGELOG 1.6.7 (Fixed): local detection (BUG 1) + masked headings give their number back (BUG 2).
-#show: clean-cnam-template.with(
-  title: "no-numbering regression",
-  author: "Test",
-  class: "Test",
-  start-date: datetime(day: 7, month: 9, year: 2025),
-  colors: (main: "#C4122E"),
-  outline-code: false,
-)
+#show: clean-cnam-template.with(config: (
+  info: (
+    title: "no-numbering regression",
+    author: "Test",
+    class: "Test",
+    start-date: datetime(day: 7, month: 9, year: 2025),
+  ),
+  colors: (primary: "#C4122E"),
+  outline: (enabled: false),
+))
 
 #no-numbering()
 = Preface

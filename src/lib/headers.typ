@@ -1,8 +1,5 @@
 /**
  * Header management for the TYPST template
- *
- * @author Tom Planche
- * @license MIT
  */
 
 /**

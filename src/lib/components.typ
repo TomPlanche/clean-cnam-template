@@ -1,11 +1,8 @@
 /**
  * UI Components for the TYPST template
- *
- * @author Tom Planche
- * @license MIT
  */
 
-#import "fonts.typ": get-fonts
+#import "store.typ": get-config, get-fonts
 
 /**
  * Create a blockquote with customizable styling.
@@ -14,8 +11,8 @@
  * Perfect for highlighting important quotes or references.
  * Supports optional attribution/source, flexible alignment, and border positioning.
  *
- * @param color - The stroke color (default: luma(170))
- * @param fill - The background fill color (default: luma(230))
+ * @param color - The stroke color (auto = colors.neutral from the config)
+ * @param fill - The background fill color (auto = colors.neutral-light from the config)
  * @param inset - The padding inside the block (default: custom spacing)
  * @param radius - The border radius (default: rounded right side)
  * @param stroke - The stroke configuration (default: left border only)
@@ -25,7 +22,7 @@
  * @param border-side - Which side to show the accent border: left, right, top, bottom, or all (default: left)
  * @param attribution - Optional attribution/source text to display at the bottom (default: none)
  * @param attribution-align - The alignment of the attribution: left, center, or right (default: right)
- * @param attribution-style - Text styling for the attribution: (size, weight, fill, style) (default: (size: 0.9em, style: "italic", fill: luma(100)))
+ * @param attribution-style - Text styling for the attribution: (size, weight, fill, style) (fill auto = colors.neutral-dark from the config)
  * @param attribution-inset - The padding around the attribution (default: (top: 8pt))
  * @param content - The content to display
  * @returns A styled blockquote element
@@ -73,8 +70,8 @@
  * ```
  */
 #let blockquote = (
-  color: luma(170),
-  fill: luma(230),
+  color: auto,
+  fill: auto,
   inset: (left: 1em, top: 10pt, right: 10pt, bottom: 10pt),
   radius: (
     top-right: 5pt,
@@ -87,10 +84,18 @@
   border-side: "left",
   attribution: none,
   attribution-align: right,
-  attribution-style: (size: 0.9em, style: "italic", fill: luma(100)),
+  attribution-style: (size: 0.9em, style: "italic", fill: auto),
   attribution-inset: (top: 8pt),
   content,
-) => {
+) => context {
+  let cfg = get-config()
+  let color = if color == auto { cfg.colors.neutral } else { color }
+  let fill = if fill == auto { cfg.colors.neutral-light } else { fill }
+  let attribution-fill = {
+    let requested = attribution-style.at("fill", default: auto)
+    if requested == auto { cfg.colors.neutral-dark } else { requested }
+  }
+
   // Helper to create stroke configuration based on border-side
   let get-stroke(side, color) = {
     if side == "all" {
@@ -142,7 +147,7 @@
             text(
               size: attribution-style.at("size", default: 0.9em),
               weight: attribution-style.at("weight", default: "regular"),
-              fill: attribution-style.at("fill", default: luma(100)),
+              fill: attribution-fill,
               style: attribution-style.at("style", default: "italic"),
               attribution
             )
@@ -160,7 +165,7 @@
  * according to your needs. Useful for callouts, notes, or highlighting content.
  * Supports optional titles and flexible alignment options.
  *
- * @param fill - The background color (default: luma(230))
+ * @param fill - The background color (auto = colors.neutral-light from the config)
  * @param inset - The padding of the block (default: 15pt)
  * @param radius - The radius of the block (default: 4pt)
  * @param outline - The outline stroke of the block (default: none)
@@ -215,7 +220,7 @@
  * ```
  */
 #let my-block = (
-  fill: luma(230),
+  fill: auto,
   inset: 15pt,
   radius: 4pt,
   outline: none,
@@ -228,7 +233,9 @@
   title-inset: (bottom: 8pt),
   body-style: (size: auto, weight: auto, fill: auto, font: auto),
   content
-) => {
+) => context {
+  let fill = if fill == auto { get-config().colors.neutral-light } else { fill }
+
   align(
     block-align,
     block(
@@ -331,10 +338,10 @@
  * @param inset - Inner padding around the code block (default: 5pt)
  * @param radius - Border radius for rounded corners (default: 3pt)
  * @param number-align - Alignment of line numbers: left, center, right (default: right)
- * @param number-style - Styling for line numbers: (size, fill, weight) (default: (size: 8pt, fill: gray))
- * @param stroke - Border stroke style and color (default: 1pt + luma(180))
- * @param fill - Background fill color (default: luma(250))
- * @param text-style - Text styling for the code body: (size, font, fill) (default: (size: 8pt, font: "Zed Plex Mono"))
+ * @param number-style - Styling for line numbers: (size, fill, weight) (fill auto = colors.neutral from the config)
+ * @param stroke - Border stroke style and color (auto = 1pt + colors.neutral-border from the config)
+ * @param fill - Background fill color (auto = colors.neutral-lightest from the config)
+ * @param text-style - Text styling for the code body: (size, font, fill). The font defaults to fonts.code from the config
  * @param width - Block width, can be length or percentage (default: 100%)
  * @param block-align - The alignment of the block itself (default: left)
  * @param breakable - Whether the code block may split across pages: true, false, or auto. With auto, the block is kept whole (pushed to the next page) when it fits within a single page, and only allowed to break when it is taller than a page (default: auto)
@@ -342,7 +349,7 @@
  * @param lang - Programming language for syntax highlighting (default: none)
  * @param filename - Optional filename to display before the language (default: none)
  * @param lang-box - Language label styling configuration: (gutter, radius, outset, fill, text-style) (default: custom)
- * @param title - Text styling for the language/filename label bar: (size, font, fill, weight) (default: (:))
+ * @param title - Text styling for the language/filename label bar: (size, font, fill, weight); fill defaults to colors.neutral-darkest
  * @param source - The source code content as raw text block
  */
 #let code(
@@ -352,10 +359,10 @@
   inset: 5pt,
   radius: 3pt,
   number-align: right,
-  number-style: (size: 8pt, fill: gray),
-  stroke: 1pt + luma(180),
-  fill: luma(250),
-  text-style: (size: 8pt, font: "Zed Plex Mono"),
+  number-style: (size: 8pt, fill: auto),
+  stroke: auto,
+  fill: auto,
+  text-style: (size: 8pt),
   width: 100%,
   block-align: left,
   breakable: auto,
@@ -423,9 +430,19 @@
   let effective-lang = lang
 
   context {
-    let fonts = get-fonts()
+    let cfg = get-config()
+    let fonts = cfg.fonts
+    let stroke = if stroke == auto { 1pt + cfg.colors.neutral-border } else { stroke }
+    let fill = if fill == auto { cfg.colors.neutral-lightest } else { fill }
     let final-text-style = (font: fonts.code.name, weight: fonts.code.weight, ..text-style)
-    let final-number-style = (font: fonts.code.name, ..number-style)
+    let final-number-style = {
+      let requested = number-style.at("fill", default: auto)
+      (
+        font: fonts.code.name,
+        ..number-style,
+        fill: if requested == auto { cfg.colors.neutral } else { requested },
+      )
+    }
 
     // Apply text styling to raw content
     // Disable kerning and ligatures to preserve strict monospace grid alignment
@@ -512,7 +529,7 @@
           text(
               font: title.at("font", default: fonts.code.name),
               size: title.at("size", default: .75em),
-              fill: title.at("fill", default: luma(80)),
+              fill: title.at("fill", default: cfg.colors.neutral-darkest),
               weight: title.at("weight", default: "regular"),
               {
             if filename != none {

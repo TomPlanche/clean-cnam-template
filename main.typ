@@ -2,15 +2,17 @@
 #import "src/lib.typ": *
 // #import "src/your-outline-code.typ": your-outline-code
 
-#show: clean-cnam-template.with(
-  title: "Component Customization Showcase",
-  author: "Tom Planche",
-  class: "Template Documentation",
-  subtitle: "Demonstrating Enhanced Components",
-  logo: image("template/assets/cnam_logo.svg"),
-  start-date: datetime(day: 7, month: 9, year: 2025),
-  colors: (main: "#C4122E"),
-  // outline-code: your-outline-code
+#show: clean-cnam-template.with(config: (
+  info: (
+    title: "Component Customization Showcase",
+    subtitle: "Demonstrating Enhanced Components",
+    author: "Tom Planche",
+    class: "Template Documentation",
+    logo: image("template/assets/cnam_logo.svg"),
+    start-date: datetime(day: 7, month: 9, year: 2025),
+  ),
+  colors: (primary: "#C4122E"),
+  // outline: (custom: your-outline-code),
   // Cover page customization example:
   // cover: (
   //   bg: rgb("#1a1a2e"),
@@ -18,7 +20,7 @@
   //   title: (color: white, size: 3em),
   //   subtitle: (color: white),
   // ),
-)
+))
 
 = Component Customization Showcase
 
@@ -215,8 +217,6 @@ All math components now support extensive customization including colors, spacin
 === Code with Title and Filename
 
 #code(
-  title: "String Utility Functions",
-  title-align: center,
   filename: "src/string_utils.rs",
   lang: "Rust",
   ```rust
@@ -269,7 +269,6 @@ All math components now support extensive customization including colors, spacin
 === Code with Line Range (Lines 5-15)
 
 #code(
-  title: "Partial Code View",
   lines: (5, 15),
   lang: "Python",
   filename: "algorithms.py",

@@ -8,14 +8,11 @@
  *
  * Originally inspired by @sebaseb98's clean-math-thesis.
  * @see https://github.com/sebaseb98/clean-math-thesis
- *
- * @author Tom Planche
- * @license MIT
  */
 
 #import "@preview/great-theorems:0.1.2": *
 #import "@preview/headcount:0.1.0": *
-#import "colors.typ": theorem-color, example-color, definition-color
+#import "store.typ": get-config
 
 // Counters for mathematical environments
 #let definition-counter = counter("definition")
@@ -96,8 +93,8 @@
  * borders, spacing, and layout.
  *
  * @param title - Optional title for the definition (default: none)
- * @param fill - Background fill color (default: definition-color.lighten(95%))
- * @param stroke - Border stroke color (default: definition-color.darken(20%))
+ * @param fill - Background fill color (auto = colors.definition lightened by 95%)
+ * @param stroke - Border stroke color (auto = colors.definition darkened by 20%)
  * @param radius - Border radius (default: 0.3em)
  * @param inset - Internal padding (default: 0.8em)
  * @param breakable - Whether the block can break across pages (default: false)
@@ -133,15 +130,19 @@
  */
 #let definition(
   title: none,
-  fill: definition-color.lighten(95%),
-  stroke: definition-color.darken(20%),
+  fill: auto,
+  stroke: auto,
   radius: 0.3em,
   inset: 0.8em,
   breakable: false,
   title-style: (size: auto, weight: auto, fill: auto, font: auto),
   body-style: (size: auto, weight: auto, fill: auto, font: auto),
   content,
-) = {
+) = context {
+  let base-color = get-config().colors.definition
+  let fill = if fill == auto { base-color.lighten(95%) } else { fill }
+  let stroke = if stroke == auto { base-color.darken(20%) } else { stroke }
+
   let env = definition-block(
     blocktitle: "Definition",
     fill: fill,
@@ -166,8 +167,8 @@
  * borders, spacing, and layout.
  *
  * @param title - Optional title for the example (default: none)
- * @param fill - Background fill color (default: example-color.lighten(90%))
- * @param stroke - Border stroke color (default: example-color.darken(20%))
+ * @param fill - Background fill color (auto = colors.example lightened by 90%)
+ * @param stroke - Border stroke color (auto = colors.example darkened by 20%)
  * @param radius - Border radius (default: 0.3em)
  * @param inset - Internal padding (default: 0.8em)
  * @param breakable - Whether the block can break across pages (default: false)
@@ -203,15 +204,19 @@
  */
 #let example(
   title: none,
-  fill: example-color.lighten(90%),
-  stroke: example-color.darken(20%),
+  fill: auto,
+  stroke: auto,
   radius: 0.3em,
   inset: 0.8em,
   breakable: false,
   title-style: (size: auto, weight: auto, fill: auto, font: auto),
   body-style: (size: auto, weight: auto, fill: auto, font: auto),
   content,
-) = {
+) = context {
+  let base-color = get-config().colors.example
+  let fill = if fill == auto { base-color.lighten(90%) } else { fill }
+  let stroke = if stroke == auto { base-color.darken(20%) } else { stroke }
+
   let env = example-block(
     blocktitle: "Example",
     fill: fill,
@@ -236,8 +241,8 @@
  * borders, spacing, and layout.
  *
  * @param title - Optional title for the theorem (default: none)
- * @param fill - Background fill color (default: theorem-color.lighten(90%))
- * @param stroke - Border stroke color (default: theorem-color.darken(20%))
+ * @param fill - Background fill color (auto = colors.theorem lightened by 90%)
+ * @param stroke - Border stroke color (auto = colors.theorem darkened by 20%)
  * @param radius - Border radius (default: 0.3em)
  * @param inset - Internal padding (default: 0.8em)
  * @param breakable - Whether the block can break across pages (default: false)
@@ -276,15 +281,19 @@
  */
 #let theorem(
   title: none,
-  fill: theorem-color.lighten(90%),
-  stroke: theorem-color.darken(20%),
+  fill: auto,
+  stroke: auto,
   radius: 0.3em,
   inset: 0.8em,
   breakable: false,
   title-style: (size: auto, weight: auto, fill: auto, font: auto),
   body-style: (size: auto, weight: auto, fill: auto, font: auto),
   content,
-) = {
+) = context {
+  let base-color = get-config().colors.theorem
+  let fill = if fill == auto { base-color.lighten(90%) } else { fill }
+  let stroke = if stroke == auto { base-color.darken(20%) } else { stroke }
+
   let env = theorem-block(
     blocktitle: "Theorem",
     fill: fill,

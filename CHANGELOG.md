@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - V2
+
+### Changed
+
+- **BREAKING: single configuration object**: `clean-cnam-template` now takes one parameter, `config`, a nested dictionary, instead of eighteen named parameters. The dictionary is merged over `default-config`, resolved once, and published to a document-wide state (`store.typ`) that every module reads.
+
+  ```typst
+  #show: clean-cnam-template.with(config: (
+    info: (title: "Rapport", author: "Tom Planche"),
+    colors: (primary: "#C4122E"),
+    fonts: (title: (name: "Inter", weight: 700)),
+    outline: (enabled: false),
+  ))
+  ```
+
+  Sections: `info`, `colors`, `fonts`, `page`, `cover`, `outline`, plus the top-level `lang`, `print`, `color-words` and `show-secondary-header`. See the migration table in the README for the mapping from the 1.x parameters.
+
+- **BREAKING: `colors.main` renamed to `colors.primary`**, and it now accepts a color object as well as a hex string.
+
+- **BREAKING: `outline-code` replaced by the `outline` section**: `outline-code: false` becomes `outline: (enabled: false)`, and `outline-code: <content>` becomes `outline: (custom: <content>)`.
+
+- **BREAKING: `language` renamed to `lang`**, and `margin` moved to `page.margin`.
+
+- **BREAKING: `fonts.typ` removed**: the font state moved into `store.typ`. `get-fonts()` still works and now reads `config.fonts`; `set-fonts()` was removed, the configuration being the single source of truth.
+
+- **BREAKING: `page-margin` and `body-font-size` are no longer exported**: read `default-config.page.margin` and `default-config.fonts.size` instead.
+
+- **Internal signatures collapsed**: `apply-styling` went from 13 positional parameters to 2, `create-title-page` from 16 to 1, and `add-decorations` from 3 to 1. Four of `apply-styling`'s parameters (`secondary-color`, `author`, `language`, `show-secondary-header`) were dead and are gone.
+
+### Added
+
+- **Unknown configuration keys are now an error**: a typo such as `(cover: (titel: ".."))` stops the compilation with `unknown option 'config.cover.titel'` followed by the list of valid keys for that section. Previously the dictionary merge used `+`, which silently dropped unknown keys. The check is recursive, so it applies at every depth.
+
+- **Themeable components**: `blockquote`, `my-block`, `code`, `definition`, `example` and `theorem` no longer hardcode their colors. Their color parameters default to `auto` and resolve against the palette, so overriding `colors.neutral-light` restyles every block and quote at once, and overriding `colors.definition` restyles every definition. Explicit per-call colors still win. Default rendering is byte-for-byte unchanged.
+
+- **Semantic palette**: `colors` gained the `neutral-lightest`, `neutral-light`, `neutral-border`, `neutral`, `neutral-dark` and `neutral-darkest` ramp, plus `definition`, `example` and `theorem`. The default values match the `luma()` shades the components used before.
+
+- **Partial font overrides**: each font entry is a dict whose members are filled independently, so `fonts: (title: (name: "Inter"))` keeps the weight inherited from `fonts.default`. Previously an incomplete font object left a missing `weight` key and failed at use.
+
+- **`fonts.chapter` implemented**: level-1 chapter headings take their own font `(name, weight, size)`, cascading from `fonts.title` with `size: 1.5em`. The option was documented in 1.7.0 but had no effect.
+
+- **`fonts.size`**: the base body size (`12pt`) is now configurable instead of being a module constant.
+
+- **`page.numbering` and `page.number-align`**: the page number pattern and placement are configurable.
+
+- **`get-config()` and `default-config` exported**: user code can read the resolved configuration from any `context` block, and inspect or extend the default tree.
+
+- **`merge-dicts()` exported**: the recursive, validating merge used internally.
+
+### Fixed
+
+- **`fonts.code` was ignored by `#code()`**: the default `text-style` carried a hardcoded `font: "Zed Plex Mono"` that was spread after the configured font, so it always won. The default no longer sets a font, and `fonts.code` reaches the code body as documented.
+
+- **`cover.second-logo`**: now a full dictionary with defaults (`image`, `scale`, `dx`, `dy`) instead of `none` plus defensive `"key" in dict` checks, so its keys are validated like any other section.
+
 ## [1.7.0] - 2026-05-13
 
 ### Added

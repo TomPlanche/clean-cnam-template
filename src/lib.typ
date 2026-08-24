@@ -9,8 +9,8 @@
  */
 
 // Export all template components
+#import "lib/store.typ": *
 #import "lib/config.typ": *
-#import "lib/fonts.typ": *
 #import "lib/components.typ": *
 #import "lib/headers.typ": *
 #import "lib/layout.typ": *

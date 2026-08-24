@@ -1,16 +1,18 @@
 
-#import "@preview/clean-cnam-template:1.6.7": *
+#import "@preview/clean-cnam-template:1.7.0": *
 
-#show: clean-cnam-template.with(
-  title: "Main Title",
-  author: "Tom Planche",
-  class: "Class name",
-  subtitle: "Class subtitle",
-  subsubtitle: "Class subtitle",
-  logo: image("./assets/cnam_logo.svg"),
-  start-date: datetime(day: 7, month: 9, year: 2025),
-  colors: (main: "#C4122E"),
-)
+#show: clean-cnam-template.with(config: (
+  info: (
+    title: "Main Title",
+    subtitle: "Class subtitle",
+    subsubtitle: "Class subtitle",
+    author: "Tom Planche",
+    class: "Class name",
+    logo: image("./assets/cnam_logo.svg"),
+    start-date: datetime(day: 7, month: 9, year: 2025),
+  ),
+  colors: (primary: "#C4122E"),
+))
 
 = Main title
 == Maths
