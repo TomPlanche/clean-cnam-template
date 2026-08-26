@@ -22,7 +22,6 @@ This template uses the following external packages:
 │   │   ├── themes.typ     # Shipped themes and document presets
 │   │   ├── config.typ     # Template entrypoint (clean-cnam-template)
 │   │   ├── components.typ # UI components (blockquote, my-block, code)
-│   │   ├── headers.typ    # Header management logic
 │   │   ├── layout.typ     # Document layout and styling
 │   │   ├── utils.typ      # Utility functions
 │   │   ├── colors.typ     # Color definitions
@@ -207,7 +206,6 @@ The built-ins are exported as `default-cover`, `default-decorations`, `default-h
 | `lang` | string | `"fr"` | Document language (`"fr"`, `"en"`) |
 | `print` | bool | `false` | Strip link color, underline, and glossary markers for print output |
 | `color-words` | array | `()` | Words automatically highlighted with the primary color |
-| `show-secondary-header` | bool | `true` | Show secondary headers |
 | `cover` | dictionary | see below | Cover page configuration (see [Cover Page](#cover-page-customization)) |
 
 ### Themes and Presets
@@ -285,7 +283,8 @@ Every option moved inside the `config` dictionary, grouped by section. The value
 | `cover: (..)` | `config.cover.*` (unchanged names) |
 | `cover: (second-logo: (image: ..))` | unchanged, but `image` now defaults to `none` inside a full dict |
 | `language: "en"` | `config.lang` |
-| `color-words:`, `print:`, `show-secondary-header:` | `config.*` (unchanged names) |
+| `color-words:`, `print:` | `config.*` (unchanged names) |
+| `show-secondary-header:` | removed, it never did anything |
 
 Before:
 
@@ -540,14 +539,7 @@ Any occurrence of the specified words will be rendered in `colors.primary`.
 
 ### Header Configuration
 
-Control the display of secondary headers (sub-headings in page headers):
-
-```typst
-#show: clean-cnam-template.with(config: (
-  // ... other sections
-  show-secondary-header: false,  // Only show main section in headers
-))
-```
+The running header shows the current level-2 heading, tracked by [hydra](https://typst.app/universe/package/hydra). To replace it entirely, pass your own function through `config.render.header` (see [Rendering Hooks](#rendering-hooks)).
 
 ### Date Range Display
 
@@ -704,16 +696,22 @@ Example with custom styling:
 Styled quote blocks with customizable colors and borders.
 
 **Parameters:**
-- `color`: Stroke color (default: `luma(170)`)
-- `fill`: Background color (default: `luma(230)`)
+- `color`: Accent color (`auto` = `colors.neutral` from the config)
+- `fill`: Background color (`auto` = `colors.neutral-light` from the config)
 - `inset`: Padding (default: custom spacing)
-- `radius`: Border radius (default: rounded right side)
-- `stroke`: Stroke configuration (default: left border only)
+- `border-side`: Which side carries the accent: `left`, `right`, `top`, `bottom` (alignment or string) or `"all"` (default: `left`). An unknown value is an error
+- `radius`: Border radius (`auto` = derived from `border-side`: the corners away from the accent are rounded)
+- `stroke`: Stroke configuration (`auto` = derived from `border-side`); passing one overrides `border-side` entirely
+- `attribution`, `attribution-align`, `attribution-style`, `attribution-inset`: optional source line under the quote
 
 **Example:**
 ```typst
 #blockquote[
   This is an important quote that needs highlighting.
+]
+
+#blockquote(border-side: right, attribution: "Confucius")[
+  I hear and I forget. I see and I remember. I do and I understand.
 ]
 ```
 

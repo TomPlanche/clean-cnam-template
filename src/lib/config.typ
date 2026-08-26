@@ -52,7 +52,7 @@
  *   size, font and align. A `text` key overrides the matching `info` field.
  * - `headings`: chapter-style ("decorated" or "plain"), chapter-pagebreak, chapter-label.
  * - `outline`: enabled, custom (content rendered instead of the default outline), indent, depth.
- * - `lang`, `print`, `color-words`, `show-secondary-header`.
+ * - `lang`, `print`, `color-words`.
  *
  * A theme is a partial configuration dictionary applied between the defaults and `config`,
  * so anything a theme sets can still be overridden per document. Pass an array to compose

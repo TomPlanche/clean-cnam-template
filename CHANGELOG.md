@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ))
   ```
 
-  Sections: `info`, `colors`, `fonts`, `page`, `cover`, `outline`, plus the top-level `lang`, `print`, `color-words` and `show-secondary-header`. See the migration table in the README for the mapping from the 1.x parameters.
+  Sections: `info`, `colors`, `fonts`, `page`, `cover`, `render`, `headings`, `outline`, plus the top-level `lang`, `print` and `color-words`. See the migration table in the README for the mapping from the 1.x parameters.
 
 - **BREAKING: `colors.main` renamed to `colors.primary`**, and it now accepts a color object as well as a hex string.
 
@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING: `page-margin` and `body-font-size` are no longer exported**: read `default-config.page.margin` and `default-config.fonts.size` instead.
 
 - **Internal signatures collapsed**: `apply-styling` went from 13 positional parameters to 2, `create-title-page` from 16 to 1, and `add-decorations` from 3 to 1. Four of `apply-styling`'s parameters (`secondary-color`, `author`, `language`, `show-secondary-header`) were dead and are gone.
+
+### Removed
+
+- **BREAKING: `show-secondary-header` removed**. It was documented in the README, accepted by the template and stored in the configuration, but nothing ever read it: the running header has been built by `hydra` since 1.6.0. It is now rejected as an unknown key rather than silently accepted. To change the header, pass `render.header`.
+
+- **BREAKING: `headers.typ` removed**, along with `get-header`, `build-main-header` and `is-after`. The module was superseded by `hydra` and its only call site was a commented-out line; it was still re-exported from `lib.typ`, so those three names disappear from the package namespace.
 
 ### Added
 
@@ -96,6 +102,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`fonts.code` was ignored by `#code()`**: the default `text-style` carried a hardcoded `font: "Zed Plex Mono"` that was spread after the configured font, so it always won. The default no longer sets a font, and `fonts.code` reaches the code body as documented.
 
 - **`cover.second-logo`**: now a full dictionary with defaults (`image`, `scale`, `dx`, `dy`) instead of `none` plus defensive `"key" in dict` checks, so its keys are validated like any other section.
+
+- **`blockquote(border-side:)` accepted values that did nothing**: the parameter was compared against the strings `"left"`, `"right"`, `"top"`, `"bottom"` and `"all"`, but the docstring's own example wrote `border-side: right`, the Typst alignment. An alignment fell through to the `else` branch and rendered the default left border with no warning. Both spellings are now accepted, and anything else panics with the list of valid values.
+
+- **`blockquote(stroke:)` and `blockquote(radius:)` were unreachable**: `border-side` always won, and the two parameters were only consulted in the fall-through branch that a valid `border-side` could never reach. They now default to `auto`, meaning "derive from `border-side`", and an explicit value overrides it. The `auto` defaults reproduce the previous rendering exactly.
 
 ## [1.7.0] - 2026-05-13
 

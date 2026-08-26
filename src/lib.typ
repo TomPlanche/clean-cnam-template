@@ -13,7 +13,6 @@
 #import "lib/themes.typ": *
 #import "lib/config.typ": *
 #import "lib/components.typ": *
-#import "lib/headers.typ": *
 #import "lib/layout.typ": *
 #import "lib/utils.typ": *
 #import "lib/colors.typ": *

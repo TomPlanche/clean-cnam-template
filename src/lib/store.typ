@@ -128,7 +128,6 @@
   lang: "fr",
   print: false,              // strips link color and underline for print output
   color-words: (),           // words automatically highlighted in the primary color
-  show-secondary-header: true,
 )
 
 // Document-wide configuration state.

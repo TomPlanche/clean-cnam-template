@@ -14,12 +14,12 @@
  * @param color - The stroke color (auto = colors.neutral from the config)
  * @param fill - The background fill color (auto = colors.neutral-light from the config)
  * @param inset - The padding inside the block (default: custom spacing)
- * @param radius - The border radius (default: rounded right side)
- * @param stroke - The stroke configuration (default: left border only)
+ * @param radius - The border radius (auto = derived from border-side, the corners away from the accent are rounded)
+ * @param stroke - The stroke configuration (auto = derived from border-side)
  * @param block-align - The alignment of the block itself (default: left)
  * @param content-align - The alignment of the content inside the block (default: left)
  * @param width - The width of the block: auto for content width, 100% for full width, or custom length (default: 100%)
- * @param border-side - Which side to show the accent border: left, right, top, bottom, or all (default: left)
+ * @param border-side - Which side carries the accent border: the alignment `left`, `right`, `top`, `bottom`, the matching string, or `"all"` for a full border (default: left). An unknown value is an error, not a silent fallback
  * @param attribution - Optional attribution/source text to display at the bottom (default: none)
  * @param attribution-align - The alignment of the attribution: left, center, or right (default: right)
  * @param attribution-style - Text styling for the attribution: (size, weight, fill, style) (fill auto = colors.neutral-dark from the config)
@@ -73,15 +73,12 @@
   color: auto,
   fill: auto,
   inset: (left: 1em, top: 10pt, right: 10pt, bottom: 10pt),
-  radius: (
-    top-right: 5pt,
-    bottom-right: 5pt,
-  ),
-  stroke: (left: 2.5pt),
+  radius: auto,
+  stroke: auto,
   block-align: left,
   content-align: left,
   width: 100%,
-  border-side: "left",
+  border-side: left,
   attribution: none,
   attribution-align: right,
   attribution-style: (size: 0.9em, style: "italic", fill: auto),
@@ -96,47 +93,63 @@
     if requested == auto { cfg.colors.neutral-dark } else { requested }
   }
 
-  // Helper to create stroke configuration based on border-side
-  let get-stroke(side, color) = {
-    if side == "all" {
-      2.5pt + color
-    } else if side == "left" {
-      (left: 2.5pt + color)
-    } else if side == "right" {
-      (right: 2.5pt + color)
-    } else if side == "top" {
-      (top: 2.5pt + color)
-    } else if side == "bottom" {
-      (bottom: 2.5pt + color)
-    } else {
-      stroke
-    }
+  // `border-side` is accepted both as an alignment (`right`) and as a string ("right"),
+  // because both spellings read naturally at the call site. Anything else is a typo, and a
+  // typo is reported rather than quietly rendered with the default left border.
+  let side = if border-side == "all" {
+    "all"
+  } else if border-side == left or border-side == "left" {
+    "left"
+  } else if border-side == right or border-side == "right" {
+    "right"
+  } else if border-side == top or border-side == "top" {
+    "top"
+  } else if border-side == bottom or border-side == "bottom" {
+    "bottom"
+  } else {
+    panic(
+      "unknown `border-side` " + repr(border-side)
+        + ". Expected left, right, top, bottom (alignment or string) or \"all\"",
+    )
   }
 
-  // Adjust radius based on border side
-  let get-radius(side) = {
-    if side == "all" {
-      5pt
-    } else if side == "left" {
-      (top-right: 5pt, bottom-right: 5pt)
-    } else if side == "right" {
-      (top-left: 5pt, bottom-left: 5pt)
-    } else if side == "top" {
-      (bottom-left: 5pt, bottom-right: 5pt)
-    } else if side == "bottom" {
-      (top-left: 5pt, top-right: 5pt)
-    } else {
-      radius
-    }
+  // The accent sits on `side`; the corners away from it are the ones that get rounded.
+  // An explicit `stroke` or `radius` wins over both.
+  let stroke = if stroke != auto {
+    stroke
+  } else if side == "all" {
+    2.5pt + color
+  } else if side == "left" {
+    (left: 2.5pt + color)
+  } else if side == "right" {
+    (right: 2.5pt + color)
+  } else if side == "top" {
+    (top: 2.5pt + color)
+  } else {
+    (bottom: 2.5pt + color)
+  }
+
+  let radius = if radius != auto {
+    radius
+  } else if side == "all" {
+    5pt
+  } else if side == "left" {
+    (top-right: 5pt, bottom-right: 5pt)
+  } else if side == "right" {
+    (top-left: 5pt, bottom-left: 5pt)
+  } else if side == "top" {
+    (bottom-left: 5pt, bottom-right: 5pt)
+  } else {
+    (top-left: 5pt, top-right: 5pt)
   }
 
   align(
     block-align,
     rect(
-      stroke: get-stroke(border-side, color),
+      stroke: stroke,
       inset: inset,
       fill: fill,
-      radius: get-radius(border-side),
+      radius: radius,
       width: width,
       {
         align(content-align, content)
