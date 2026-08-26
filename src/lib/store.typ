@@ -96,6 +96,85 @@
     author: (color: auto, weight: "bold", size: 14pt, font: auto, align: center),
   ),
 
+  // Code block colors. `accent` paints the rule down the left edge and the language tab;
+  // `background` sits behind the code itself.
+  code: (
+    // auto -> the language's own color from `lang-colors`, falling back to colors.primary
+    // when the language is unknown or absent. Set a color here to pin every block to it
+    // and ignore the table.
+    accent: auto,
+    background: auto,  // auto -> the accent lightened to 94%
+    // Language lookup, keyed by lowercased language name. Open-ended: unknown keys are
+    // accepted, so adding a language is a one-line override and never a schema error.
+    // Values follow GitHub Linguist, so a block reads the way the language does elsewhere.
+    lang-colors: (
+      bash: rgb("#4EAA25"),
+      c: rgb("#555555"),
+      clojure: rgb("#DB5855"),
+      cpp: rgb("#F34B7D"),
+      csharp: rgb("#178600"),
+      css: rgb("#563D7C"),
+      dart: rgb("#00B4AB"),
+      diff: rgb("#88807B"),
+      dockerfile: rgb("#384D54"),
+      elixir: rgb("#6E4A7E"),
+      erlang: rgb("#B83998"),
+      fish: rgb("#4EAA25"),
+      fortran: rgb("#4D41B1"),
+      go: rgb("#00ADD8"),
+      haskell: rgb("#5E5086"),
+      html: rgb("#E34C26"),
+      java: rgb("#B07219"),
+      javascript: rgb("#F1E05A"),
+      json: rgb("#292929"),
+      julia: rgb("#A270BA"),
+      kotlin: rgb("#A97BFF"),
+      latex: rgb("#3D6117"),
+      lua: rgb("#000080"),
+      makefile: rgb("#427819"),
+      markdown: rgb("#083FA1"),
+      matlab: rgb("#E16737"),
+      nix: rgb("#7E7EFF"),
+      ocaml: rgb("#EF7A08"),
+      perl: rgb("#0298C3"),
+      php: rgb("#4F5D95"),
+      python: rgb("#3572A5"),
+      r: rgb("#198CE7"),
+      ruby: rgb("#701516"),
+      rust: rgb("#DEA584"),
+      scala: rgb("#C22D40"),
+      scss: rgb("#C6538C"),
+      sql: rgb("#E38C00"),
+      swift: rgb("#F05138"),
+      toml: rgb("#9C4221"),
+      typescript: rgb("#3178C6"),
+      typst: rgb("#239DAD"),
+      vim: rgb("#199F4B"),
+      xml: rgb("#0060AC"),
+      yaml: rgb("#CB171E"),
+      zig: rgb("#EC915C"),
+    ),
+    // Spellings that should resolve to an entry above. Also open-ended.
+    lang-aliases: (
+      "c++": "cpp",
+      "c#": "csharp",
+      js: "javascript",
+      jsx: "javascript",
+      md: "markdown",
+      objective-c: "c",
+      "pl": "perl",
+      py: "python",
+      rs: "rust",
+      sh: "bash",
+      shell: "bash",
+      tex: "latex",
+      ts: "typescript",
+      tsx: "typescript",
+      yml: "yaml",
+      zsh: "bash",
+    ),
+  ),
+
   // Rendering hooks. `auto` keeps the built-in implementation; pass a function to replace
   // it. Each one receives the resolved configuration, so a replacement has access to
   // every colour, font and piece of metadata the template itself uses. The built-ins are
@@ -197,14 +276,17 @@
  * @param theme - A configuration dictionary, or an array of them, applied under `config`
  * @returns A fully resolved configuration dictionary
  */
+// Lookup tables the user extends rather than overrides, so their keys skip validation.
+#let _open-paths = ("code.lang-colors", "code.lang-aliases")
+
 #let resolve-config(config, theme: none) = {
   let cfg = default-config
 
   for layer in _theme-list(theme) {
-    cfg = merge-dicts(cfg, layer, path: "theme")
+    cfg = merge-dicts(cfg, layer, path: "theme", open: _open-paths)
   }
 
-  cfg = merge-dicts(cfg, config)
+  cfg = merge-dicts(cfg, config, open: _open-paths)
 
   // Dates and academic year
   if cfg.info.start-date == auto { cfg.info.start-date = datetime.today() }
@@ -230,6 +312,12 @@
   }
   if cfg.colors.outline != auto { cfg.colors.outline = _as-color(cfg.colors.outline) }
   if cfg.colors.page-number != auto { cfg.colors.page-number = _as-color(cfg.colors.page-number) }
+
+  // Code block colors. `accent` and `background` stay `auto` when unset: both depend on
+  // the language of a given block, so they can only settle at render time.
+  if cfg.code.accent != auto { cfg.code.accent = _as-color(cfg.code.accent) }
+  if cfg.code.background != auto { cfg.code.background = _as-color(cfg.code.background) }
+  cfg.code.lang-colors = cfg.code.lang-colors.pairs().map(((k, v)) => (k, _as-color(v))).to-dict()
 
   // Cover text falls back to the matching `info` field
   if cfg.cover.title.text == auto { cfg.cover.title.text = cfg.info.title }

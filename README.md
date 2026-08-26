@@ -2,7 +2,7 @@
 
 A modular and organized TYPST template for creating professional documents using CNAM branding and styling.
 
-Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubble-template) and uses [CNAM](https://www.cnam.fr/)'s logo and colors.
+Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubble-template) and uses [CNAM](https://www.cnam.fr/)'s logo and colors. The code block styling is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme).
 
 ## Dependencies
 
@@ -59,7 +59,7 @@ This template uses the following external packages:
 
    - Using the published package (as in `main.typ`):
    ```typst
-   #import "@preview/clean-cnam-template:1.7.0": *
+   #import "@preview/clean-cnam-template:2.0.0": *
    ```
 
    - Using this repository locally (from `src/`):
@@ -136,12 +136,12 @@ Your own code can read the resolved configuration from any `context` block:
 | `secondary` | color / auto | `auto` | Decorative circles and accents. `auto` = `primary` lightened by 30%. |
 | `outline` | color / auto | `auto` | Table of contents entries. `auto` = default text color. |
 | `page-number` | color / auto | `auto` | Page numbers. `auto` = default text color. |
-| `neutral-lightest` | color | `luma(250)` | Code block background |
+| `neutral-lightest` | color | `luma(250)` | Reserved light shade, available to your own components |
 | `neutral-light` | color | `luma(230)` | `my-block` and `blockquote` background |
-| `neutral-border` | color | `luma(180)` | Code block border |
+| `neutral-border` | color | `luma(180)` | Reserved border shade, available to your own components |
 | `neutral` | color | `luma(170)` | Blockquote accent, code line numbers |
-| `neutral-dark` | color | `luma(100)` | Blockquote attribution |
-| `neutral-darkest` | color | `luma(80)` | Code block label bar |
+| `neutral-dark` | color | `luma(100)` | Blockquote attribution, code block filename |
+| `neutral-darkest` | color | `luma(80)` | Reserved dark shade, available to your own components |
 | `definition` | color | `rgb("#ff0000")` | `#definition` environment |
 | `example` | color | `rgb("#0000ff")` | `#example` environment |
 | `theorem` | color | `rgb("#800080")` | `#theorem` environment |
@@ -167,6 +167,17 @@ Components derive their shades from this palette, so overriding `neutral-light` 
 | `margin` | dictionary | `(top: 2.5cm, right: 1.27cm, bottom: 1.75cm, left: 1.27cm)` | Page margins, partial overrides supported |
 | `numbering` | string | `"1 / 1"` | Page numbering pattern |
 | `number-align` | alignment | `bottom + right` | Page number placement |
+
+#### `code` -- code block colors
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `accent` | color / auto | `auto` | Left rule and language tab. `auto` = the language's own color, falling back to `colors.primary`. Set a color to pin every block and ignore the language table. |
+| `background` | color / auto | `auto` | Behind the code. `auto` = the accent lightened to 94%. |
+| `lang-colors` | dictionary | ~45 languages | Language name (lowercased) to color. Open-ended: unknown keys are accepted. |
+| `lang-aliases` | dictionary | `py`, `rs`, `sh`, `ts`, `c++`, ... | Alternate spellings to `lang-colors` keys. Also open-ended. |
+
+See [Colors per Language](#colors-per-language) for the resolution order and examples.
 
 #### `render` -- rendering hooks
 
@@ -638,6 +649,8 @@ To disable the outline completely:
 
 The template provides enhanced code blocks with multiple features including syntax highlighting, line numbers, and filename labels.
 
+The look is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI, MIT licensed: the language in a small tab notched onto the top-left corner, a thick accent rule down the left edge instead of a full border, a tint of the accent behind the code, and generous padding. What this template adds on top is the line numbering, the line labels and ranges, the breakable-block measurement, and the per-language color table.
+
 Note: Examples below use text fences and Typst `raw(...)` to avoid nested backticks so automated package checks pass. In your own documents, you can use normal Markdown code fences and standard Typst code blocks.
 
 ### Basic Usage
@@ -663,17 +676,51 @@ The `code()` function supports many customization options:
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `lang` | string/none | `none` | Label to display in the top bar. When `none`, the bar is hidden but syntax highlighting still uses the raw block's own `lang` attribute. When the bar is hidden (no `lang` and no `filename`), the block gets fully rounded corners on all sides. |
-| `filename` | string/none | `none` | Optional filename to display |
+| `lang` | string/none | `none` | Label shown in the tab, uppercased. When `none`, the tab is hidden but syntax highlighting, and the accent color, still use the raw block's own `lang` attribute. |
+| `filename` | string/none | `none` | Optional filename, shown beside the tab in muted text |
 | `numbering` | bool | `true` | Whether to show line numbers |
 | `line-spacing` | length | `5pt` | Vertical spacing between lines |
-| `fill` | color | `luma(250)` | Background color |
-| `stroke` | stroke | `1pt + luma(180)` | Border style |
-| `radius` | length | `3pt` | Border radius |
+| `accent` | color/auto | `auto` | Color of the left rule and the language tab. `auto` resolves through `code.lang-colors` (see below) |
+| `fill` | color/auto | `auto` | Background behind the code. `auto` = `code.background`, itself defaulting to the accent lightened to 94% |
+| `stroke` | stroke | `auto` | Border: a `0.35em` rule down the left edge, in the accent |
+| `radius` | length | `2pt` | Border radius |
+| `inset` | dict/length | `(x: 1.2em, y: 1em)` | Padding around the code |
 | `width` | length/% | `100%` | Block width |
 | `lines` | range/auto | `auto` | Line range to display |
 | `number-align` | alignment | `right` | Line number alignment |
 | `text-style` | dict | `(size: 8pt)` | Text styling options |
+| `lang-box` | dict | `(:)` | Tab styling: `fill`, `inset`, `radius`, `text-style`. `fill` defaults to `colors.primary` |
+| `title` | dict | `(:)` | Filename styling: `size`, `font`, `fill`, `weight` |
+
+The tab label picks black or white automatically, whichever reads against the accent.
+
+### Colors per Language
+
+Every block takes its accent from the language it shows. The lookup table lives in `config.code.lang-colors`, keyed by lowercased language name, with values from [GitHub Linguist](https://github.com/github-linguist/linguist) so a Python block reads blue and a Rust block reads rust-orange, the way they do elsewhere. `config.code.lang-aliases` maps the short spellings (`py`, `rs`, `sh`, `c++`, `yml`) onto those keys.
+
+Both tables are open-ended: unlike every other section, unknown keys are accepted rather than rejected, because adding a language is extending a lookup, not misspelling an option.
+
+```typst
+#show: clean-cnam-template.with(config: (code: (
+  lang-colors: (
+    python: rgb("#FFD43B"),      // override a shipped language
+    brainfuck: rgb("#2F2530"),   // or add one the template never heard of
+  ),
+  lang-aliases: (bf: "brainfuck"),
+)))
+```
+
+A language with no entry falls back to `colors.primary`.
+
+Three levels of override, most specific first:
+
+| Where | Effect |
+|-------|--------|
+| `#code(accent: ..., fill: ...)` | This block only |
+| `config.code.accent` | Pins every block to one color and ignores the language table. This is the switch for a document that must stay on brand |
+| `config.code.background` | Pins every code background, independently of the accent |
+
+Since these are ordinary configuration keys, a theme can carry a code palette. `themes.monochrome` does exactly that.
 
 Example with custom styling:
 ```text
@@ -860,6 +907,12 @@ Adding a theme by hand means adding it to two places in `src/lib/themes.typ`: th
 ## Author
 
 - **Tom Planche**
+
+## Acknowledgements
+
+- [hzkonor/bubble-template](https://github.com/hzkonor/bubble-template), the original basis for this template.
+- [Ives-Natsume/typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI (MIT), the source of the code block styling.
+- [github-linguist/linguist](https://github.com/github-linguist/linguist) (MIT), the source of the per-language colors in `code.lang-colors`.
 
 ## License
 

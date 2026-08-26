@@ -13,12 +13,17 @@
  * Every key of `patch` must exist in `base`: a typo raises an error naming the offending
  * path and listing the valid keys, instead of being silently dropped as a `+` merge would.
  *
+ * A few dictionaries are open-ended by nature: `code.lang-colors` is a lookup table the
+ * user is meant to extend with languages the template never heard of. `open` lists their
+ * root-relative paths, and their contents merge without key validation.
+ *
  * @param base - The reference dictionary (also the source of truth for valid keys)
  * @param patch - The user-supplied overrides
  * @param path - Dotted path of `base`, used to build error messages
+ * @param open - Root-relative dotted paths whose contents accept unknown keys
  * @returns The merged dictionary
  */
-#let merge-dicts(base, patch, path: "config") = {
+#let merge-dicts(base, patch, path: "config", open: ()) = {
   assert(
     type(patch) == dictionary,
     message: "`" + path + "` must be a dictionary, found " + str(type(patch)),
@@ -28,6 +33,17 @@
 
   for (key, value) in patch {
     let child-path = path + "." + key
+
+    // The root segment is the caller's label ("config" or "theme"), so compare what
+    // follows it: an open path is open whichever layer it arrives from.
+    if child-path.split(".").slice(1).join(".") in open {
+      assert(
+        type(value) == dictionary,
+        message: "`" + child-path + "` must be a dictionary, found " + str(type(value)),
+      )
+      out.insert(key, base.at(key, default: (:)) + value)
+      continue
+    }
 
     if key not in base {
       panic(
@@ -41,7 +57,7 @@
     out.insert(
       key,
       if type(current) == dictionary and type(value) == dictionary {
-        merge-dicts(current, value, path: child-path)
+        merge-dicts(current, value, path: child-path, open: open)
       } else {
         value
       },

@@ -50,6 +50,8 @@
  * - `cover`: bg, decorations, second-logo (image, scale, dx, dy), padding, spacing, and one
  *   dict per element (title, subtitle, subsubtitle, date, author) with text, color, weight,
  *   size, font and align. A `text` key overrides the matching `info` field.
+ * - `code`: accent, background, plus the open-ended lang-colors and lang-aliases lookups
+ *   that give each language its own color. `auto` accent means "use the language's color".
  * - `headings`: chapter-style ("decorated" or "plain"), chapter-pagebreak, chapter-label.
  * - `outline`: enabled, custom (content rendered instead of the default outline), indent, depth.
  * - `lang`, `print`, `color-words`.

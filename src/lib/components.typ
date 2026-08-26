@@ -352,8 +352,9 @@
  * @param radius - Border radius for rounded corners (default: 3pt)
  * @param number-align - Alignment of line numbers: left, center, right (default: right)
  * @param number-style - Styling for line numbers: (size, fill, weight) (fill auto = colors.neutral from the config)
- * @param stroke - Border stroke style and color (auto = 1pt + colors.neutral-border from the config)
- * @param fill - Background fill color (auto = colors.neutral-lightest from the config)
+ * @param accent - Color of the left rule and of the language tab (auto = the language's color from code.lang-colors, falling back to code.accent then colors.primary)
+ * @param stroke - Border stroke style and color (auto = a 0.35em rule down the left edge, in the accent)
+ * @param fill - Background fill color behind the code (auto = code.background, itself defaulting to the accent lightened to 94%)
  * @param text-style - Text styling for the code body: (size, font, fill). The font defaults to fonts.code from the config
  * @param width - Block width, can be length or percentage (default: 100%)
  * @param block-align - The alignment of the block itself (default: left)
@@ -361,18 +362,19 @@
  * @param lines - Line range to display: (start, end) or auto for all (default: auto)
  * @param lang - Programming language for syntax highlighting (default: none)
  * @param filename - Optional filename to display before the language (default: none)
- * @param lang-box - Language label styling configuration: (gutter, radius, outset, fill, text-style) (default: custom)
- * @param title - Text styling for the language/filename label bar: (size, font, fill, weight); fill defaults to colors.neutral-darkest
+ * @param lang-box - Styling for the language tab: (fill, inset, radius, text-style). `fill` auto = colors.primary; the text fill auto picks black or white for contrast against it
+ * @param title - Text styling for the filename shown beside the language tab: (size, font, fill, weight); fill defaults to colors.neutral-dark
  * @param source - The source code content as raw text block
  */
 #let code(
   line-spacing: 5pt,
   line-offset: 5pt,
   numbering: true,
-  inset: 5pt,
-  radius: 3pt,
+  inset: (x: 1.2em, y: 1em),
+  radius: 2pt,
   number-align: right,
   number-style: (size: 8pt, fill: auto),
+  accent: auto,
   stroke: auto,
   fill: auto,
   text-style: (size: 8pt),
@@ -382,11 +384,7 @@
   lines: auto,
   lang: none,
   filename: none,
-  lang-box: (
-    gutter: 5pt,
-    radius: 3pt,
-    outset: 1.75pt,
-  ),
+  lang-box: (:),
   title: (:),
   source
 ) = {
@@ -445,8 +443,36 @@
   context {
     let cfg = get-config()
     let fonts = cfg.fonts
-    let stroke = if stroke == auto { 1pt + cfg.colors.neutral-border } else { stroke }
-    let fill = if fill == auto { cfg.colors.neutral-lightest } else { fill }
+
+    // The accent carries the block: a rule down the left edge, the language tab, and a
+    // tint of the same hue behind the code. Four sources, most specific first: this call,
+    // the language's own color, a `code.accent` pinned by the configuration, the brand.
+    // The label given to `lang` wins over the raw block's own attribute, since it is the
+    // one the reader sees.
+    let lang-key = lower(if type(effective-lang) == str {
+      effective-lang
+    } else if type(source.at("lang", default: none)) == str {
+      source.at("lang", default: none)
+    } else {
+      ""
+    })
+    let lang-key = cfg.code.lang-aliases.at(lang-key, default: lang-key)
+    let accent = if accent != auto {
+      accent
+    } else if cfg.code.accent != auto {
+      cfg.code.accent
+    } else {
+      cfg.code.lang-colors.at(lang-key, default: cfg.colors.primary)
+    }
+
+    let stroke = if stroke == auto { (left: 0.35em + accent) } else { stroke }
+    let fill = if fill != auto {
+      fill
+    } else if cfg.code.background != auto {
+      cfg.code.background
+    } else {
+      accent.lighten(94%)
+    }
     let final-text-style = (font: fonts.code.name, weight: fonts.code.weight, ..text-style)
     let final-number-style = {
       let requested = number-style.at("fill", default: auto)
@@ -481,10 +507,9 @@
       0pt
     }
 
-    let has-top-bar = filename != none or effective-lang != none
     block(
       inset: inset,
-      radius: if has-top-bar { (bottom: radius) } else { radius },
+      radius: radius,
       stroke: stroke,
       fill: fill,
       width: width,
@@ -527,40 +552,60 @@
     )
   }
 
-    // Create the complete code block with optional language label
+    // The language sits in a small tab notched onto the top-left corner of the block
+    // rather than in a full-width bar. A filename, when given, trails it in muted text
+    // on the page background: it is a caption, not part of the accent.
+    let tab-fill = lang-box.at("fill", default: auto)
+    let tab-fill = if tab-fill == auto { accent } else { tab-fill }
+    let tab-text = lang-box.at("text-style", default: (:))
+    let tab-ink = tab-text.at("fill", default: auto)
+    // White on a dark accent, black on a light one, so a theme can recolor `primary`
+    // without the tab label disappearing into it.
+    let tab-ink = if tab-ink == auto {
+      if color.luma(tab-fill).components().at(0) > 60% { black } else { white }
+    } else {
+      tab-ink
+    }
+
     let rendered = stack(
       dir: ttb,
       spacing: 0pt,
-      // Language/filename label outside and above the code block
       if filename != none or effective-lang != none {
-        rect(
-          width: width,
-          inset: 6pt,
-          radius: (top: lang-box.at("radius", default: 3pt)),
-          fill: fill,
-          stroke: stroke,
-          text(
-              font: title.at("font", default: fonts.code.name),
-              size: title.at("size", default: .75em),
-              fill: title.at("fill", default: cfg.colors.neutral-darkest),
-              weight: title.at("weight", default: "regular"),
-              {
-            if filename != none {
-              filename
-            }
-            if filename != none and effective-lang != none {
-              " | "
-            }
-            if effective-lang != none {
-              effective-lang
-            }
-          })
+        stack(
+          dir: ltr,
+          spacing: 0.6em,
+          if effective-lang != none {
+            block(
+              fill: tab-fill,
+              inset: lang-box.at("inset", default: (x: .6em, y: .3em)),
+              radius: (top: lang-box.at("radius", default: radius)),
+              text(
+                font: tab-text.at("font", default: fonts.code.name),
+                size: tab-text.at("size", default: .7em),
+                weight: tab-text.at("weight", default: "black"),
+                fill: tab-ink,
+                upper(effective-lang),
+              ),
+            )
+          },
+          if filename != none {
+            block(
+              inset: (y: .3em),
+              text(
+                font: title.at("font", default: fonts.code.name),
+                size: title.at("size", default: .7em),
+                fill: title.at("fill", default: cfg.colors.neutral-dark),
+                weight: title.at("weight", default: "regular"),
+                filename,
+              ),
+            )
+          },
         )
       },
       // Code block
       raw(
           block: true,
-          lang: source.lang,
+          lang: source.at("lang", default: none),
           unlabelled-source
       )
     )

@@ -54,6 +54,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Because `render` is an ordinary configuration key, a theme can carry a layout and not only a palette.
 
+- **Code blocks restyled**: the chrome now follows the accent instead of a neutral grey box. The language moves from a full-width bar into a small tab notched onto the top-left corner, uppercased in `colors.primary` with a label color picked automatically for contrast; a filename, when given, trails the tab in muted text. The border becomes a `0.35em` accent rule down the left edge, the background a 94% tint of the accent, and the padding grows to `(x: 1.2em, y: 1em)`. Line numbers, line labels, line ranges and the breakable-block measurement are unchanged.
+
+  The look is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI (MIT).
+
+  `lang-box` changes shape: its dead `gutter` and `outset` keys are gone, replaced by `fill`, `inset`, `radius` and `text-style`. `title` now styles the filename rather than the whole bar.
+
+- **A color per language**: the new `code` configuration section carries `lang-colors`, a lookup from language name to accent color covering some 45 languages, with values from [GitHub Linguist](https://github.com/github-linguist/linguist) so a block reads the way its language does elsewhere. `lang-aliases` maps the short spellings (`py`, `rs`, `sh`, `c++`, `yml`) onto those keys. The accent resolves from the `lang` label, or from the raw block's own attribute when no label is given, and falls back to `colors.primary` for an unknown language.
+
+  Three levels of override: `#code(accent:, fill:)` for one block, `code.accent` to pin every block to a single color and ignore the table, `code.background` to pin the background alone. `themes.monochrome` pins `code.accent`, since a per-language palette defeats the point of a greyscale theme.
+
+  ```typst
+  #show: clean-cnam-template.with(config: (code: (
+    lang-colors: (python: rgb("#FFD43B"), brainfuck: rgb("#2F2530")),
+    lang-aliases: (bf: "brainfuck"),
+  )))
+  ```
+
+- **Open-ended configuration dictionaries**: `merge-dicts` takes an `open` parameter listing root-relative paths whose contents merge without key validation. `code.lang-colors` and `code.lang-aliases` are the two, because adding a language is extending a lookup rather than misspelling an option. Every other path stays strict.
+
 - **Built-in renderers exported**: `default-cover`, `default-decorations`, `default-header` and `default-chapter`, so a hook can wrap one instead of starting from scratch. `add-decorations` keeps its name and is now the orchestrator that applies the `render.decorations` hook.
 
 - **Theme system**: `clean-cnam-template` takes a new `theme` parameter, a partial configuration dictionary applied between the defaults and your `config`. Themes are validated against the same schema, so they can touch any option, and anything a theme sets stays overridable per document. Pass an array to compose layers, later ones winning.
@@ -104,6 +123,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`cover.second-logo`**: now a full dictionary with defaults (`image`, `scale`, `dx`, `dy`) instead of `none` plus defensive `"key" in dict` checks, so its keys are validated like any other section.
 
 - **`blockquote(border-side:)` accepted values that did nothing**: the parameter was compared against the strings `"left"`, `"right"`, `"top"`, `"bottom"` and `"all"`, but the docstring's own example wrote `border-side: right`, the Typst alignment. An alignment fell through to the `else` branch and rendered the default left border with no warning. Both spellings are now accepted, and anything else panics with the list of valid values.
+
+- **`#code()` crashed on a raw block with no language**: `source.lang` was read as a plain field, but `lang` only exists on a `raw` element that declares one, so an undecorated block failed with `field "lang" in raw is not known at this point`. It is now read with a default.
 
 - **`blockquote(stroke:)` and `blockquote(radius:)` were unreachable**: `border-side` always won, and the two parameters were only consulted in the fall-through branch that a valid `border-side` could never reach. They now default to `auto`, meaning "derive from `border-side`", and an explicit value overrides it. The `auto` defaults reproduce the previous rendering exactly.
 

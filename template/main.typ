@@ -1,5 +1,5 @@
 
-#import "@preview/clean-cnam-template:1.7.0": *
+#import "@preview/clean-cnam-template:2.0.0": *
 
 #show: clean-cnam-template.with(config: (
   info: (

@@ -30,10 +30,11 @@
  *   headings, links and accents only. Suited to a dissertation handed to a jury.
  * - `dark`: dark cover with white text, decorations kept.
  * - `monochrome`: greyscale everywhere, for black and white printing. Pair it with
- *   `config: (print: true)` to also drop link coloring. Syntax highlighting inside code
- *   blocks stays colored: it comes from Typst's built-in `raw` theme, not from this
- *   palette. Pass your own greyscale theme with `set raw(theme: "..tmTheme")` if you need
- *   the code to be monochrome too.
+ *   `config: (print: true)` to also drop link coloring. It pins `code.accent`, because the
+ *   per-language code palette would otherwise print as a muddle of unrelated greys.
+ *   Syntax highlighting inside code blocks stays colored: it comes from Typst's built-in
+ *   `raw` theme, not from this palette. Pass your own greyscale theme with
+ *   `set raw(theme: "..tmTheme")` if you need the code to be monochrome too.
  */
 #let themes = (
   cnam: (
@@ -71,6 +72,8 @@
       example: luma(60),
       theorem: luma(60),
     ),
+    // Pinned, otherwise every block would still pull its own color from `lang-colors`
+    code: (accent: luma(40)),
   ),
 )
 
