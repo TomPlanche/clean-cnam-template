@@ -169,6 +169,20 @@ Components derive their shades from this palette, so overriding `neutral-light` 
 | `numbering` | string | `"1 / 1"` | Page numbering pattern |
 | `number-align` | alignment | `bottom + right` | Page number placement |
 
+#### `render` -- rendering hooks
+
+Each key takes `auto` (the built-in implementation) or a function receiving the resolved configuration.
+
+| Key | Signature | Replaces |
+|-----|-----------|----------|
+| `cover` | `(cfg) => content` | The cover page content. Not the page break that follows it, nor the outline. |
+| `decorations` | `(cfg) => content` | The shapes placed behind the cover. Still gated by `cover.decorations`. |
+| `header` | `(cfg) => content` | The running page header. |
+| `footer` | `(cfg) => content` | The page footer, page numbering included. |
+| `chapter` | `(cfg, it, label: bool) => content` | The decorated chapter page. Not the page break, nor the heading counter bookkeeping. |
+
+The built-ins are exported as `default-cover`, `default-decorations`, `default-header` and `default-chapter`, so a hook can wrap one instead of starting over. See [Rendering Hooks](#rendering-hooks).
+
 #### `headings` -- level-1 heading rendering
 
 | Key | Type | Default | Description |
@@ -397,6 +411,71 @@ Title and subtitle content alongside their styling (everything in one place):
 Partial overrides work at every level. For example, `cover: (title: (size: 3em))` only changes the title size -- color, weight, and font keep their defaults.
 
 The title color cascades: setting `cover: (title: (color: white))` also applies white to the subtitle and the horizontal lines, unless the subtitle explicitly overrides its own color.
+
+### Rendering Hooks
+
+The template's own layout functions are the default value of a configuration key, not a hard-coded call. Pass your own function to `render.<name>` and it is used instead, receiving the resolved configuration: every color, font and piece of metadata the template itself works from.
+
+```typst
+#let ma-cover(cfg) = {
+  set align(center + horizon)
+  text(size: 3em, fill: cfg.colors.primary, weight: 700, cfg.cover.title.text)
+  linebreak()
+  text(size: 1.2em, fill: cfg.colors.neutral-dark, cfg.info.affiliation)
+}
+
+#show: clean-cnam-template.with(config: (
+  info: (title: "Rapport", affiliation: "CNAM"),
+  render: (cover: ma-cover),
+))
+```
+
+#### What each hook owns
+
+The split is deliberate: bookkeeping stays with the template, appearance goes to the hook. A replacement chapter page never has to remember to break the page or to fix the heading counter, and a replacement cover never has to remember the outline.
+
+| Hook | You provide | The template still handles |
+|------|-------------|----------------------------|
+| `cover` | The cover page content | The page break after it, the background reset, the outline |
+| `decorations` | The placed shapes | The `cover.decorations` toggle |
+| `header` | The running header | Nothing else |
+| `footer` | The whole footer | Nothing: providing a footer replaces the page numbering, so render it yourself if you want it |
+| `chapter` | The chapter page appearance | The page break, and the counter give-back for masked chapters |
+
+`chapter` receives `label`, which is `false` for a chapter masked by `#no-numbering()`. It is not called at all when `headings.chapter-style` is `"plain"`, or for a heading preceded by `#no-big-title()`: both of those mean "this is not a chapter page".
+
+#### Wrapping a built-in
+
+The default implementations are exported, so a hook can extend one rather than replace it:
+
+```typst
+#let cover-avec-mention(cfg) = {
+  default-cover(cfg)
+  place(bottom + left, dy: -1cm, text(size: 7pt)[Document confidentiel])
+}
+```
+
+#### Hooks in a theme
+
+A theme is a configuration dictionary, and `render` is a configuration key, so a theme can carry a layout and not just a palette:
+
+```typst
+#let theme-bandeau = (
+  colors: (primary: rgb("#00539F")),
+  cover: (decorations: false),
+  render: (
+    cover: cover-avec-mention,
+    chapter: (cfg, it, label: true) => block(
+      fill: cfg.colors.primary,
+      inset: 0.8em,
+      width: 100%,
+      text(fill: white, size: 1.3em, weight: 700, it.body),
+    ),
+  ),
+)
+
+#show: clean-cnam-template.with(theme: theme-bandeau, config: (info: (title: "Rapport")))
+```
 
 ### Font Configuration
 

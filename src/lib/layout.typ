@@ -78,6 +78,82 @@
  * @param cfg - The resolved configuration dictionary
  * @param body - The document content
  */
+// Resolve a rendering hook: `auto` selects the built-in implementation.
+#let _hook(cfg, name, fallback) = {
+  let hook = cfg.render.at(name)
+  if hook == auto { fallback } else { hook }
+}
+
+/**
+ * Built-in running header: the current level-2 section, right-aligned above a rule.
+ *
+ * Replaceable through `render.header`.
+ *
+ * @param cfg - The resolved configuration dictionary
+ * @returns The header content
+ */
+#let default-header(cfg) = context [
+  #hydra(2, display: (_, it) => {
+    set align(right)
+
+    numbering(it.numbering, ..counter(heading).at(it.location()))
+
+    h(0.3cm) + it.body
+
+    v(-0.3cm)
+
+    line(length: 100%, stroke: 0.5pt + cfg.colors.primary)
+  })
+]
+
+/**
+ * Built-in decorated chapter page: the title centered between two rules, optionally
+ * preceded by the "Chapitre N" label.
+ *
+ * The page break and the heading counter bookkeeping stay with the template, so a
+ * replacement only has to describe what the chapter page looks like. It is not called for
+ * `headings.chapter-style: "plain"`, nor for a heading preceded by `#no-big-title()`:
+ * both mean "this is not a chapter page".
+ *
+ * Replaceable through `render.chapter`.
+ *
+ * @param cfg - The resolved configuration dictionary
+ * @param it - The level-1 heading element
+ * @param label - Whether to print the "Chapitre N" label (false for a masked chapter)
+ * @returns The chapter page content
+ */
+#let default-chapter(cfg, it, label: true) = {
+  let chapter-font = cfg.fonts.chapter
+  let primary = cfg.colors.primary
+
+  set align(center)
+  set block(spacing: 0.6cm)
+
+  if cfg.headings.chapter-pagebreak {
+    v(-(cfg.page.margin.top / 2))
+  }
+
+  if label {
+    context {
+      if heading.numbering != none {
+        // Masked chapters gave their number back, so the live counter already holds the
+        // visible chapter number.
+        let chapter-num = counter(heading).at(here()).at(0)
+        [#linguify("chapter", from: translations-database) #chapter-num]
+      }
+    }
+  }
+
+  thin-line(primary)
+  text(
+    font: chapter-font.name,
+    weight: chapter-font.weight,
+    size: chapter-font.size,
+    it.body,
+  )
+  thin-line(primary)
+}
+
 #let apply-styling(cfg, body) = {
   let primary = cfg.colors.primary
   let body-font = cfg.fonts.body
@@ -99,19 +175,15 @@
     },
     number-align: cfg.page.number-align,
 
-    header: context [
-      #hydra(2, display: (_, it) => {
-        set align(right)
+    header: (_hook(cfg, "header", default-header))(cfg),
 
-        numbering(it.numbering, ..counter(heading).at(it.location()))
-
-        h(0.3cm) + it.body
-
-        v(-0.3cm)
-
-        line(length: 100%, stroke: 0.5pt + primary)
-      })
-    ]
+    // `auto` keeps Typst's own footer, which is what renders the page numbering above.
+    // A hook replaces it outright, numbering included.
+    footer: if cfg.render.footer == auto {
+      auto
+    } else {
+      (cfg.render.footer)(cfg)
+    },
   )
 
   show: great-theorems-init
@@ -146,6 +218,7 @@
   let plain-chapters = cfg.headings.chapter-style == "plain"
   let chapter-pagebreak = cfg.headings.chapter-pagebreak
   let chapter-label = cfg.headings.chapter-label
+  let chapter-renderer = _hook(cfg, "chapter", default-chapter)
 
   show heading: it => {
     if it.level == 1 and plain-chapters {
@@ -167,46 +240,16 @@
           #set text(size: 1.2em)
           #it
         ] else if _immediately-preceded-by(<_cnam-no-numbering>, it.location()) [
-          // Masked chapter: keep the decorative style but drop the "Chapitre N" label and
-          // give back the number so numbered chapters keep counting without a gap. The
-          // give-back is emitted after the pagebreak so it lands past the heading's own
-          // counted position (a pagebreak before it would place it too early).
-          #set text(font: chapter-font.name, weight: chapter-font.weight, size: chapter-font.size)
-          #set align(center)
-          #set block(spacing: 0.6cm)
+          // Masked chapter: the same chapter page without the "Chapitre N" label, giving
+          // its number back so numbered chapters keep counting without a gap. The
+          // give-back is emitted after the page break so it lands past the heading's own
+          // counted position (a break before it would place it too early).
           #if chapter-pagebreak { pagebreak(weak: true) }
           #counter(heading).update(_give-back-number)
-          #if chapter-pagebreak { v(-(margin.top / 2)) }
-          #thin-line(primary)
-          #it.body
-          #thin-line(primary)
+          #chapter-renderer(cfg, it, label: false)
         ] else [
-          #set align(center)
-          #set block(spacing: 0.6cm)
-
           #if chapter-pagebreak { pagebreak(weak: true) }
-
-          #if chapter-pagebreak { v(-(margin.top / 2)) }
-
-          #if chapter-label {
-            context {
-              if heading.numbering != none {
-                // Masked chapters gave their number back, so the live counter already
-                // holds the visible chapter number.
-                let chapter-num = counter(heading).at(here()).at(0)
-                [#linguify("chapter", from: translations-database) #chapter-num]
-              }
-            }
-          }
-
-          #thin-line(primary)
-          #text(
-            font: chapter-font.name,
-            weight: chapter-font.weight,
-            size: chapter-font.size,
-            it.body,
-          )
-          #thin-line(primary)
+          #chapter-renderer(cfg, it, label: chapter-label)
         ]
       }
     } else {
@@ -298,7 +341,7 @@
  *
  * @param cfg - The resolved configuration dictionary
  */
-#let add-decorations(cfg) = {
+#let default-decorations(cfg) = {
   let second-logo = cfg.cover.second-logo
 
   // Top left decoration
@@ -322,11 +365,25 @@
 }
 
 /**
- * Create the title page layout, followed by the outline.
+ * Place the cover decorations, through the `render.decorations` hook.
  *
  * @param cfg - The resolved configuration dictionary
  */
-#let create-title-page(cfg) = {
+#let add-decorations(cfg) = (_hook(cfg, "decorations", default-decorations))(cfg)
+
+/**
+ * Built-in cover page: logo, the title block framed by two rules, and the author block
+ * at the bottom.
+ *
+ * Returns the cover page content only. The page break that follows it, the background
+ * reset and the outline belong to `create-title-page`, not here.
+ *
+ * Replaceable through `render.cover`.
+ *
+ * @param cfg - The resolved configuration dictionary
+ * @returns The cover page content
+ */
+#let default-cover(cfg) = {
   let info = cfg.info
   let cover = cfg.cover
   let author = format-authors(info.author)
@@ -428,6 +485,18 @@
       #bottom-text
     ]
   )
+}
+
+/**
+ * Render the cover page, then the outline.
+ *
+ * The cover itself comes from the `render.cover` hook; the page break, the background
+ * reset and the outline stay here so a replacement cover does not have to remember them.
+ *
+ * @param cfg - The resolved configuration dictionary
+ */
+#let create-title-page(cfg) = {
+  (_hook(cfg, "cover", default-cover))(cfg)
 
   pagebreak()
 

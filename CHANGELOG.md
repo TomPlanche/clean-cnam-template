@@ -36,6 +36,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Rendering hooks**: the cover, the decorations, the page header, the page footer and the decorated chapter page are now configuration values rather than hard-coded calls. Set `render.<name>` to a function and it replaces the built-in, receiving the resolved configuration.
+
+  ```typst
+  #show: clean-cnam-template.with(config: (
+    render: (cover: (cfg) => align(center + horizon, text(3em, cfg.cover.title.text))),
+  ))
+  ```
+
+  The split keeps bookkeeping with the template: a replacement chapter page does not have to emit the page break or give the heading counter its number back, and a replacement cover does not have to remember the outline. `chapter` receives `label: false` for a chapter masked by `#no-numbering()`, and is not called at all under `headings.chapter-style: "plain"` or after `#no-big-title()`.
+
+  Because `render` is an ordinary configuration key, a theme can carry a layout and not only a palette.
+
+- **Built-in renderers exported**: `default-cover`, `default-decorations`, `default-header` and `default-chapter`, so a hook can wrap one instead of starting from scratch. `add-decorations` keeps its name and is now the orchestrator that applies the `render.decorations` hook.
+
 - **Theme system**: `clean-cnam-template` takes a new `theme` parameter, a partial configuration dictionary applied between the defaults and your `config`. Themes are validated against the same schema, so they can touch any option, and anything a theme sets stays overridable per document. Pass an array to compose layers, later ones winning.
 
   ```typst

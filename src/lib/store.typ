@@ -96,6 +96,19 @@
     author: (color: auto, weight: "bold", size: 14pt, font: auto, align: center),
   ),
 
+  // Rendering hooks. `auto` keeps the built-in implementation; pass a function to replace
+  // it. Each one receives the resolved configuration, so a replacement has access to
+  // every colour, font and piece of metadata the template itself uses. The built-ins are
+  // exported as `default-cover`, `default-decorations`, `default-header` and
+  // `default-chapter`, so a hook can wrap one instead of starting from scratch.
+  render: (
+    cover: auto,        // (cfg) => content, the cover page only (no page break, no outline)
+    decorations: auto,  // (cfg) => content, the placed shapes behind the cover
+    header: auto,       // (cfg) => content, the running page header
+    footer: auto,       // (cfg) => content, replaces the page-numbering footer entirely
+    chapter: auto,      // (cfg, it, label: bool) => content, the decorated chapter page
+  ),
+
   // Level-1 heading rendering
   headings: (
     // "decorated": the centered chapter page (rules, "Chapitre N", own font size)
