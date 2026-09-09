@@ -22,8 +22,21 @@ fi
 TARGET="$(resolve-target "${1:?Missing target path, @local or @preview}")"
 echo "Install dir: $TARGET"
 
+# read a newline-separated stream into an array, one line per element.
+# `readarray`/`mapfile` would do this, but macOS ships bash 3.2, which has neither.
+function read-lines {
+  local -a lines=()
+  local line
+  while IFS= read -r line; do
+    lines+=("$line")
+  done
+  # the caller reads the result from this global
+  READ_LINES=("${lines[@]+${lines[@]}}")
+}
+
 # ignore rules
-readarray -t ignores < <(grep -v '^#' .typstignore | grep '[^[:blank:]]')
+read-lines < <(grep -v '^#' .typstignore | grep '[^[:blank:]]')
+ignores=("${READ_LINES[@]+${READ_LINES[@]}}")
 
 # recursively print all files that are not excluded via .typstignore
 function enumerate {
@@ -32,19 +45,20 @@ function enumerate {
     echo "$root"
   else
     local files
-    readarray -t files < <(find "$root" \
+    read-lines < <(find "$root" \
       -mindepth 1 -maxdepth 1 \
       -not -name .git \
       -not -name .typstignore)
+    files=("${READ_LINES[@]+${READ_LINES[@]}}")
     # declare -p files >&2
 
     local f
-    for f in "${files[@]}"; do
+    for f in "${files[@]+${files[@]}}"; do
       local include
       include=1
 
       local ignore
-      for ignore in "${ignores[@]}"; do
+      for ignore in "${ignores[@]+${ignores[@]}}"; do
         if [[ "$ignore" =~ ^! ]]; then
           ignore="${ignore:1}"
           if [[ "$f" == ./$ignore ]]; then
@@ -64,12 +78,13 @@ function enumerate {
 }
 
 # List of all files that get packaged
-readarray -t files < <(enumerate ".")
+read-lines < <(enumerate ".")
+files=("${READ_LINES[@]+${READ_LINES[@]}}")
 # declare -p files >&2
 
 TMP="$(mktemp -d)"
 
-for f in "${files[@]}"; do
+for f in "${files[@]+${files[@]}}"; do
   mkdir -p "$TMP/$(dirname "$f")" 2>/dev/null
   cp -r "$ROOT/$f" "$TMP/$f"
 done

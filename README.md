@@ -140,7 +140,7 @@ Your own code can read the resolved configuration from any `context` block:
 | `neutral-light` | color | `luma(230)` | `my-block` and `blockquote` background |
 | `neutral-border` | color | `luma(180)` | Reserved border shade, available to your own components |
 | `neutral` | color | `luma(170)` | Blockquote accent, code line numbers |
-| `neutral-dark` | color | `luma(100)` | Blockquote attribution, code block filename |
+| `neutral-dark` | color | `luma(100)` | Blockquote attribution, muted captions |
 | `neutral-darkest` | color | `luma(80)` | Reserved dark shade, available to your own components |
 | `definition` | color | `rgb("#ff0000")` | `#definition` environment |
 | `example` | color | `rgb("#0000ff")` | `#example` environment |
@@ -649,7 +649,7 @@ To disable the outline completely:
 
 The template provides enhanced code blocks with multiple features including syntax highlighting, line numbers, and filename labels.
 
-The look is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI, MIT licensed: the language in a small tab notched onto the top-left corner, a thick accent rule down the left edge instead of a full border, a tint of the accent behind the code, and generous padding. What this template adds on top is the line numbering, the line labels and ranges, the breakable-block measurement, and the per-language color table.
+The look is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI, MIT licensed: the language, and the filename beside it, in a small tab notched onto the top-left corner, a thick accent rule down the left edge instead of a full border, running straight from the top of the tab to the bottom of the block, a tint of the accent behind the code, and generous padding. What this template adds on top is the line numbering, the line labels and ranges, the breakable-block measurement, and the per-language color table.
 
 Note: Examples below use text fences and Typst `raw(...)` to avoid nested backticks so automated package checks pass. In your own documents, you can use normal Markdown code fences and standard Typst code blocks.
 
@@ -677,22 +677,22 @@ The `code()` function supports many customization options:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `lang` | string/none | `none` | Label shown in the tab, uppercased. When `none`, the tab is hidden but syntax highlighting, and the accent color, still use the raw block's own `lang` attribute. |
-| `filename` | string/none | `none` | Optional filename, shown beside the tab in muted text |
+| `filename` | string/none | `none` | Optional filename, shown beside the language inside the tab |
 | `numbering` | bool | `true` | Whether to show line numbers |
 | `line-spacing` | length | `5pt` | Vertical spacing between lines |
 | `accent` | color/auto | `auto` | Color of the left rule and the language tab. `auto` resolves through `code.lang-colors` (see below) |
 | `fill` | color/auto | `auto` | Background behind the code. `auto` = `code.background`, itself defaulting to the accent lightened to 94% |
-| `stroke` | stroke | `auto` | Border: a `0.35em` rule down the left edge, in the accent |
-| `radius` | length | `2pt` | Border radius |
+| `stroke` | stroke | `auto` | Border: a rule down the left edge, in the accent, `0.35` times the code text size |
+| `radius` | length | `2pt` | Radius of the two right-hand corners. The left edge stays square, so the accent rule reads as a straight bar. A dictionary is passed through as given |
 | `inset` | dict/length | `(x: 1.2em, y: 1em)` | Padding around the code |
 | `width` | length/% | `100%` | Block width |
 | `lines` | range/auto | `auto` | Line range to display |
 | `number-align` | alignment | `right` | Line number alignment |
 | `text-style` | dict | `(size: 8pt)` | Text styling options |
-| `lang-box` | dict | `(:)` | Tab styling: `fill`, `inset`, `radius`, `text-style`. `fill` defaults to `colors.primary` |
-| `title` | dict | `(:)` | Filename styling: `size`, `font`, `fill`, `weight` |
+| `lang-box` | dict | `(:)` | Tab styling: `fill`, `inset`, `radius`, `text-style`. `radius` rounds the top-right corner only; `fill` defaults to `colors.primary` |
+| `title` | dict | `(:)` | Filename styling: `size`, `font`, `fill`, `weight`. `fill` defaults to the tab ink, faded 20% |
 
-The tab label picks black or white automatically, whichever reads against the accent.
+The tab carries the same color as the rule down the left edge, and the filename sits in it beside the language. The labels pick black or white automatically, whichever reads against that accent, with the filename lightly faded so the language stays dominant.
 
 ### Colors per Language
 

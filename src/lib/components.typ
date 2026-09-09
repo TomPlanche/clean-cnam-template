@@ -349,11 +349,11 @@
  * @param line-offset - Horizontal offset for line numbers (default: 5pt)
  * @param numbering - Whether to display line numbers: true, false, or auto (hides for single-line blocks) (default: true)
  * @param inset - Inner padding around the code block (default: 5pt)
- * @param radius - Border radius for rounded corners (default: 3pt)
+ * @param radius - Radius of the two right-hand corners; the left edge stays square so the accent rule reads as a straight bar. A dictionary is passed through as given (default: 3pt)
  * @param number-align - Alignment of line numbers: left, center, right (default: right)
  * @param number-style - Styling for line numbers: (size, fill, weight) (fill auto = colors.neutral from the config)
  * @param accent - Color of the left rule and of the language tab (auto = the language's color from code.lang-colors, falling back to code.accent then colors.primary)
- * @param stroke - Border stroke style and color (auto = a 0.35em rule down the left edge, in the accent)
+ * @param stroke - Border stroke style and color (auto = a rule down the left edge, in the accent, 0.35 times the code text size)
  * @param fill - Background fill color behind the code (auto = code.background, itself defaulting to the accent lightened to 94%)
  * @param text-style - Text styling for the code body: (size, font, fill). The font defaults to fonts.code from the config
  * @param width - Block width, can be length or percentage (default: 100%)
@@ -361,9 +361,9 @@
  * @param breakable - Whether the code block may split across pages: true, false, or auto. With auto, the block is kept whole (pushed to the next page) when it fits within a single page, and only allowed to break when it is taller than a page (default: auto)
  * @param lines - Line range to display: (start, end) or auto for all (default: auto)
  * @param lang - Programming language for syntax highlighting (default: none)
- * @param filename - Optional filename to display before the language (default: none)
- * @param lang-box - Styling for the language tab: (fill, inset, radius, text-style). `fill` auto = colors.primary; the text fill auto picks black or white for contrast against it
- * @param title - Text styling for the filename shown beside the language tab: (size, font, fill, weight); fill defaults to colors.neutral-dark
+ * @param filename - Optional filename to display beside the language, inside the same tab (default: none)
+ * @param lang-box - Styling for the language tab: (fill, inset, radius, text-style). `radius` rounds the top-right corner only; `fill` auto = colors.primary; the text fill auto picks black or white for contrast against it
+ * @param title - Text styling for the filename shown beside the language inside the tab: (size, font, fill, weight); fill defaults to the tab ink, lightly faded
  * @param source - The source code content as raw text block
  */
 #let code(
@@ -465,7 +465,25 @@
       cfg.code.lang-colors.at(lang-key, default: cfg.colors.primary)
     }
 
-    let stroke = if stroke == auto { (left: 0.35em + accent) } else { stroke }
+    // The rule is 0.35em of the code text, resolved here rather than left as an `em`:
+    // inside the block it would resolve against the code size, while the tab above it
+    // sits at the document size, and the two left edges would miss each other.
+    let bar-width = 0.35 * text-style.at("size", default: 8pt)
+    // A block stroke straddles the frame edge, so the rule juts half its width out to
+    // the left of the code block. The tab is nudged by that same amount to keep the two
+    // left edges flush. A caller-supplied stroke is left alone: its width is not ours
+    // to guess.
+    let bar-overhang = if stroke == auto { bar-width / 2 } else { 0pt }
+    let stroke = if stroke == auto { (left: bar-width + accent) } else { stroke }
+    // The accent rule down the left edge should read as one straight bar, so the two
+    // corners it passes through stay square and only the right-hand pair is rounded.
+    // A radius given as a dictionary is the caller spelling the corners out, and is
+    // taken as it stands.
+    let body-radius = if type(radius) == dictionary {
+      radius
+    } else {
+      (top-left: 0pt, bottom-left: 0pt, top-right: radius, bottom-right: radius)
+    }
     let fill = if fill != auto {
       fill
     } else if cfg.code.background != auto {
@@ -509,7 +527,7 @@
 
     block(
       inset: inset,
-      radius: radius,
+      radius: body-radius,
       stroke: stroke,
       fill: fill,
       width: width,
@@ -553,8 +571,8 @@
   }
 
     // The language sits in a small tab notched onto the top-left corner of the block
-    // rather than in a full-width bar. A filename, when given, trails it in muted text
-    // on the page background: it is a caption, not part of the accent.
+    // rather than in a full-width bar. A filename, when given, trails it inside the same
+    // tab, so the header reads as one band of the accent that also rules the left edge.
     let tab-fill = lang-box.at("fill", default: auto)
     let tab-fill = if tab-fill == auto { accent } else { tab-fill }
     let tab-text = lang-box.at("text-style", default: (:))
@@ -571,36 +589,42 @@
       dir: ttb,
       spacing: 0pt,
       if filename != none or effective-lang != none {
-        stack(
-          dir: ltr,
-          spacing: 0.6em,
-          if effective-lang != none {
-            block(
-              fill: tab-fill,
-              inset: lang-box.at("inset", default: (x: .6em, y: .3em)),
-              radius: (top: lang-box.at("radius", default: radius)),
-              text(
-                font: tab-text.at("font", default: fonts.code.name),
-                size: tab-text.at("size", default: .7em),
-                weight: tab-text.at("weight", default: "black"),
-                fill: tab-ink,
-                upper(effective-lang),
-              ),
-            )
+        move(dx: -bar-overhang, block(
+          fill: tab-fill,
+          inset: lang-box.at("inset", default: (x: .6em, y: .3em)),
+          radius: (top-right: lang-box.at("radius", default: radius)),
+          // The tab and the block below it share an edge, and a renderer that antialiases
+          // each shape on its own leaves a hairline of page showing through the seam. The
+          // outset slips the tab half a point under the block, which draws over it, so the
+          // two shapes overlap instead of merely touching. It costs no layout height.
+          outset: (bottom: 0.5pt),
+          {
+            let parts = (
+              if effective-lang != none {
+                text(
+                  font: tab-text.at("font", default: fonts.code.name),
+                  size: tab-text.at("size", default: .7em),
+                  weight: tab-text.at("weight", default: "black"),
+                  fill: tab-ink,
+                  upper(effective-lang),
+                )
+              },
+              // The filename shares the band with the language, so it takes the same
+              // ink, lightly faded to keep the language label dominant.
+              if filename != none {
+                text(
+                  font: title.at("font", default: fonts.code.name),
+                  size: title.at("size", default: .7em),
+                  fill: title.at("fill", default: tab-ink.transparentize(20%)),
+                  weight: title.at("weight", default: "regular"),
+                  filename,
+                )
+              },
+            ).filter(part => part != none)
+
+            stack(dir: ltr, spacing: 0.8em, ..parts)
           },
-          if filename != none {
-            block(
-              inset: (y: .3em),
-              text(
-                font: title.at("font", default: fonts.code.name),
-                size: title.at("size", default: .7em),
-                fill: title.at("fill", default: cfg.colors.neutral-dark),
-                weight: title.at("weight", default: "regular"),
-                filename,
-              ),
-            )
-          },
-        )
+        ))
       },
       // Code block
       raw(

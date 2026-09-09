@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
   Because `render` is an ordinary configuration key, a theme can carry a layout and not only a palette.
 
-- **Code blocks restyled**: the chrome now follows the accent instead of a neutral grey box. The language moves from a full-width bar into a small tab notched onto the top-left corner, uppercased in `colors.primary` with a label color picked automatically for contrast; a filename, when given, trails the tab in muted text. The border becomes a `0.35em` accent rule down the left edge, the background a 94% tint of the accent, and the padding grows to `(x: 1.2em, y: 1em)`. Line numbers, line labels, line ranges and the breakable-block measurement are unchanged.
+- **Code blocks restyled**: the chrome now follows the accent instead of a neutral grey box. The language moves from a full-width bar into a small tab notched onto the top-left corner, uppercased in `colors.primary` with a label color picked automatically for contrast; a filename, when given, sits in the tab beside the language, in the same ink lightly faded. The border becomes an accent rule down the left edge, `0.35` times the code text size, straight from the top of the tab to the bottom of the block since only the two right-hand corners are rounded, the background a 94% tint of the accent, and the padding grows to `(x: 1.2em, y: 1em)`. Line numbers, line labels, line ranges and the breakable-block measurement are unchanged.
 
   The look is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI (MIT).
 
