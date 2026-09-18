@@ -1,7 +1,6 @@
 # Reference
 
-The exhaustive documentation of `clean-cnam-template`: every configuration key, every
-component parameter, and the details the [README](README.md) deliberately leaves out.
+The exhaustive documentation of `clean-cnam-template`: every configuration key, every component parameter, and the details the [README](README.md) deliberately leaves out.
 
 Start with the README for the tour. Come here when you need the full picture of a section.
 
@@ -908,9 +907,7 @@ Adding a theme by hand means adding it to two places in `src/lib/themes.typ`: th
 
 ### Running the tests
 
-`tests/<name>/test.typ` holds one document per test. Most are compile-only: their `#assert`
-calls fail the compilation when a regression appears, so no reference image is involved.
-`tests/test1` is the exception, comparing its output to `tests/test1/ref/1.png`.
+`tests/<name>/test.typ` holds one document per test. Most are compile-only: their `#assert` calls fail the compilation when a regression appears, so no reference image is involved. `tests/test1` is the exception, comparing its output to `tests/test1/ref/1.png`.
 
 | Command | Effect |
 |---------|--------|
@@ -924,9 +921,7 @@ Without tytanic installed, `typst` alone is enough:
 for t in tests/*/test.typ; do echo "== $t"; typst compile --root . "$t" --format pdf - >/dev/null; done
 ```
 
-Silence means every test passed; a failure prints the assertion message and the line that
-tripped it. To look at what a test produces, render it: `typst compile --root .
-tests/front-matter/test.typ --format png --ppi 120 "/tmp/fm-{p}.png"`.
+Silence means every test passed; a failure prints the assertion message and the line that tripped it. To look at what a test produces, render it: `typst compile --root . tests/front-matter/test.typ --format png --ppi 120 "/tmp/fm-{p}.png"`.
 
 ## Migrating from 1.x
 

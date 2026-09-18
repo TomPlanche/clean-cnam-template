@@ -1,13 +1,10 @@
 # CNAM TYPST Template
 
-A modular Typst template for CNAM documents: cover page, decorated chapter pages, front
-matter, and components (blocks, quotes, code, math environments) that all follow one
-configuration object.
+A modular Typst template for CNAM documents: cover page, decorated chapter pages, front matter, and components (blocks, quotes, code, math environments) that all follow one configuration object.
 
 Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubble-template) and uses [CNAM](https://www.cnam.fr/)'s logo and colors. The code block styling is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme).
 
-> **Every option, every parameter, every detail: [REFERENCE.md](REFERENCE.md).**
-> This page is the tour.
+> **Every option, every parameter, every detail: [REFERENCE.md](REFERENCE.md).** This page is the tour.
 
 ## Quick Start
 
@@ -36,9 +33,7 @@ Working on this repository instead of the published package? Import `src/lib.typ
 #import "src/lib.typ": *
 ```
 
-The template pulls `great-theorems`, `hydra`, `i-figured`, `headcount` and `orchid` from
-Typst Universe (downloaded on first compile), and expects the `New Computer Modern Math`
-and `Zed Plex Mono` fonts, both replaceable through [`fonts`](REFERENCE.md#font-configuration).
+The template pulls `great-theorems`, `hydra`, `i-figured`, `headcount` and `orchid` from Typst Universe (downloaded on first compile), and expects the `New Computer Modern Math` and `Zed Plex Mono` fonts, both replaceable through [`fonts`](REFERENCE.md#font-configuration).
 
 ## Components
 
@@ -62,8 +57,7 @@ and `Zed Plex Mono` fonts, both replaceable through [`fonts`](REFERENCE.md#font-
 ]
 ```
 
-`#code()` takes a raw block, with the language and an optional filename shown in a tab
-(written here with `raw(..)` rather than a nested fence, which Markdown cannot show):
+`#code()` takes a raw block, with the language and an optional filename shown in a tab (written here with `raw(..)` rather than a nested fence, which Markdown cannot show):
 
 ```text
 #code(
@@ -73,14 +67,11 @@ and `Zed Plex Mono` fonts, both replaceable through [`fonts`](REFERENCE.md#font-
 )
 ```
 
-Every component reads the palette and the fonts from the configuration, so restyling the
-document does not mean restyling each call site. Per-call parameters still win --
-see [Components](REFERENCE.md#components) and [Code Blocks](REFERENCE.md#code-blocks).
+Every component reads the palette and the fonts from the configuration, so restyling the document does not mean restyling each call site. Per-call parameters still win -- see [Components](REFERENCE.md#components) and [Code Blocks](REFERENCE.md#code-blocks).
 
 ## Front Matter
 
-`front-matter.pages` is the ordered list of pages between the cover and the body. One
-entry, one page, in the order given -- which is also how the table of contents is placed.
+`front-matter.pages` is the ordered list of pages between the cover and the body. One entry, one page, in the order given -- which is also how the table of contents is placed.
 
 ```typst
 front-matter: (pages: (
@@ -94,13 +85,9 @@ front-matter: (pages: (
 )),
 ```
 
-That list happens to be the EiCnam dissertation layout, [spelled out in full](REFERENCE.md#a-full-front-matter)
-in the reference. The default is `("outline",)`: cover, table of contents, body. Sections
-of your own are unnumbered and listed in the table of contents unless they pass
-`outlined: false`; a bare content entry becomes an untitled page.
+That list happens to be the EiCnam dissertation layout, [spelled out in full](REFERENCE.md#a-full-front-matter) in the reference. The default is `("outline",)`: cover, table of contents, body. Sections of your own are unnumbered and listed in the table of contents unless they pass `outlined: false`; a bare content entry becomes an untitled page.
 
-Page numbering has two anchors, both `auto` by default (numbering starts on the first page
-of the body, printing that page's own position):
+Page numbering has two anchors, both `auto` by default (numbering starts on the first page of the body, printing that page's own position):
 
 ```typst
 page: (numbering-start: 1)                      // the body opens at 1
@@ -112,8 +99,7 @@ More in [Front Matter](REFERENCE.md#front-matter) and [Page Numbering](REFERENCE
 
 ## Customization
 
-Everything goes through the single `config` dictionary. Overrides are partial at every
-depth, and an unknown key is an error naming the valid ones rather than a silent no-op.
+Everything goes through the single `config` dictionary. Overrides are partial at every depth, and an unknown key is an error naming the valid ones rather than a silent no-op.
 
 ```typst
 #show: clean-cnam-template.with(config: (
@@ -143,8 +129,7 @@ depth, and an unknown key is an error naming the valid ones rather than a silent
 
 ### Themes and Presets
 
-A theme is a partial configuration applied *under* your own, so anything it sets stays
-overridable. Pass an array to compose several, later layers winning:
+A theme is a partial configuration applied *under* your own, so anything it sets stays overridable. Pass an array to compose several, later layers winning:
 
 ```typst
 #show: clean-cnam-template.with(
@@ -177,15 +162,13 @@ Recipes for working on the template itself, none of which ship in the package:
 | `just new-theme NAME` / `just new-preset NAME` | Scaffold a skeleton entry |
 | `just test` | Run the test suite ([tytanic](https://github.com/typst-community/tytanic), binary `tt`) |
 
-Without tytanic installed, the tests are plain Typst documents whose assertions fail the
-compilation:
+Without tytanic installed, the tests are plain Typst documents whose assertions fail the compilation:
 
 ```bash
 for t in tests/*/test.typ; do echo "== $t"; typst compile --root . "$t" --format pdf - >/dev/null; done
 ```
 
-More in [Development](REFERENCE.md#development) and [Project Structure](REFERENCE.md#project-structure);
-[CHANGELOG.md](CHANGELOG.md) has what changed when.
+More in [Development](REFERENCE.md#development) and [Project Structure](REFERENCE.md#project-structure); [CHANGELOG.md](CHANGELOG.md) has what changed when.
 
 ## Author
 
