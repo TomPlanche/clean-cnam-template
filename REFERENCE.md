@@ -2,7 +2,7 @@
 
 The exhaustive documentation of `clean-cnam-template`: every configuration key, every component parameter, and the details the [README](README.md) deliberately leaves out.
 
-Start with the README for the tour. Come here when you need the full picture of a section.
+The README shows how to write a document with the template. Come here when you need the full picture of a section, or when you work on the template itself.
 
 ## Contents
 

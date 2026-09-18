@@ -1,12 +1,14 @@
 # CNAM TYPST Template
 
-A modular Typst template for CNAM documents: cover page, decorated chapter pages, front matter, and components (blocks, quotes, code, math environments) that all follow one configuration object.
+A Typst template for CNAM documents. It gives you a cover page, chapter pages, front matter, and components for your text: blocks, quotes, code blocks, and math environments.
 
-Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubble-template) and uses [CNAM](https://www.cnam.fr/)'s logo and colors. The code block styling is adapted from [typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme).
+One configuration dictionary controls the whole document. Every component reads it.
 
-> **Every option, every parameter, every detail: [REFERENCE.md](REFERENCE.md).** This page is the tour.
+> **This page shows you how to write a document with the template. [REFERENCE.md](REFERENCE.md) lists every option.**
 
-## Quick Start
+## Start a document
+
+Import the package. Then apply the template with your configuration:
 
 ```typst
 #import "@preview/clean-cnam-template:2.0.0": *
@@ -23,33 +25,35 @@ Originally based on [hzkonor's bubble-template](https://github.com/hzkonor/bubbl
   colors: (primary: "#C4122E"),
 ))
 
-= First chapter     // opens a decorated chapter page
+= First chapter     // a level-1 heading opens a chapter page
 == A section
 ```
 
-Working on this repository instead of the published package? Import `src/lib.typ`:
+Typst downloads the packages of the template on the first compile. The template uses two fonts: `New Computer Modern Math` for the text and `Zed Plex Mono` for the code. Install these two fonts, or name your own fonts in the `fonts` section.
+
+If you work from a copy of this repository, import the source instead:
 
 ```typst
 #import "src/lib.typ": *
 ```
 
-The template pulls `great-theorems`, `hydra`, `i-figured`, `headcount` and `orchid` from Typst Universe (downloaded on first compile), and expects the `New Computer Modern Math` and `Zed Plex Mono` fonts, both replaceable through [`fonts`](REFERENCE.md#font-configuration).
+## Write the text
 
-## Components
+Write your text with the components below. Each component reads the colors and the fonts of the configuration. You do not set a style again at each use.
 
-| Component | What it is |
-|-----------|------------|
-| `#blockquote[..]` | Quote block with an accent border on any side, optional attribution |
-| `#my-block[..]` | Callout block with an optional title, width and alignment control |
-| `#code(lang: .., <raw block>)` | Code block with line numbers, ranges, filename tab and a color per language |
-| `#definition(title: ..)[..]` | Math definition environment |
-| `#example(title: ..)[..]` | Math example environment |
-| `#theorem(title: ..)[..]` | Math theorem environment |
-| `#ar(v)` | Vector arrow notation, `$ar(v)$` |
-| `#icon("..")` | Inline icon, sized and spaced for running text |
-| `#date-format(datetime(..))` | A date in `DD/MM/YYYY` |
-| `#no-numbering()` | Next heading keeps its style but loses its number |
-| `#no-big-title()` | Next `=` heading stays in the flow instead of opening a chapter page |
+| Component | What it does |
+|-----------|--------------|
+| `#blockquote[..]` | A quote with a colored border on one side, and an optional attribution |
+| `#my-block[..]` | A callout with an optional title. You control the width and the alignment. |
+| `#code(lang: .., <raw block>)` | A code block with line numbers, a filename tab, and one color per language |
+| `#definition(title: ..)[..]` | A math definition |
+| `#example(title: ..)[..]` | A math example |
+| `#theorem(title: ..)[..]` | A math theorem |
+| `#ar(v)` | A vector arrow, as in `$ar(v)$` |
+| `#icon("..")` | An icon in the text, at the size of the text |
+| `#date-format(datetime(..))` | A date in the `DD/MM/YYYY` form |
+| `#no-numbering()` | The next heading keeps its style and loses its number |
+| `#no-big-title()` | The next `=` heading stays in the text and opens no chapter page |
 
 ```typst
 #definition(title: "Linearity")[
@@ -57,7 +61,7 @@ The template pulls `great-theorems`, `hydra`, `i-figured`, `headcount` and `orch
 ]
 ```
 
-`#code()` takes a raw block, with the language and an optional filename shown in a tab (written here with `raw(..)` rather than a nested fence, which Markdown cannot show):
+`#code()` takes a raw block. The example below writes that raw block with `raw(..)`, because Markdown cannot show a code fence inside a code fence:
 
 ```text
 #code(
@@ -67,16 +71,16 @@ The template pulls `great-theorems`, `hydra`, `i-figured`, `headcount` and `orch
 )
 ```
 
-Every component reads the palette and the fonts from the configuration, so restyling the document does not mean restyling each call site. Per-call parameters still win -- see [Components](REFERENCE.md#components) and [Code Blocks](REFERENCE.md#code-blocks).
+Read [Components](REFERENCE.md#components) and [Code Blocks](REFERENCE.md#code-blocks) for every parameter.
 
-## Front Matter
+## Build the front matter
 
-`front-matter.pages` is the ordered list of pages between the cover and the body. One entry, one page, in the order given -- which is also how the table of contents is placed.
+The front matter is the group of pages between the cover and the body. You list these pages in `front-matter.pages`. Each entry makes one page, and the pages come in the order of the list. The list also places the table of contents.
 
 ```typst
 front-matter: (pages: (
   "blank",                                          // an empty page
-  "cover-text",                                     // the cover text again, without the logo
+  "cover-text",                                     // the text of the cover again, without the logo
   (title: "Foreword", body: [ ... ]),               // a section of your own
   (title: "Acknowledgements", body: thanks),        // ... or a (cfg) => content function
   "outline",                                        // the table of contents
@@ -85,54 +89,67 @@ front-matter: (pages: (
 )),
 ```
 
-That list happens to be the EiCnam dissertation layout, [spelled out in full](REFERENCE.md#a-full-front-matter) in the reference. The default is `("outline",)`: cover, table of contents, body. Sections of your own are unnumbered and listed in the table of contents unless they pass `outlined: false`; a bare content entry becomes an untitled page.
+This list is the front matter of an EiCnam dissertation. The reference [writes it in full](REFERENCE.md#a-full-front-matter).
 
-Page numbering has two anchors, both `auto` by default (numbering starts on the first page of the body, printing that page's own position):
+Three rules apply to the entries:
+
+- The default list is `("outline",)`. You get the cover, the table of contents, then the body.
+- The template writes your sections without a number, and lists them in the table of contents. To keep one section out of the table of contents, add `outlined: false` to its entry.
+- An entry that is not a name and not a dictionary is content. The template makes a page of that content, without a title.
+
+Read [Front Matter](REFERENCE.md#front-matter) for the full list of entries.
+
+## Set the page numbers
+
+By default, the numbers start on the first page of the body. The first number is the position of that page in the document. The cover and the front matter show no number. Two keys change this behavior:
+
+| Key | Effect |
+|-----|--------|
+| `page.numbering-from` | The first page that prints a number. Give a position, or the label of an element on that page. |
+| `page.numbering-start` | The number that this page prints |
 
 ```typst
-page: (numbering-start: 1)                       // the body opens at 1
-page: (numbering-from: 2)                        // numbering starts on page 2: 2, 3, 4, ...
-page: (numbering-from: 2, numbering-start: 3)    // starts on page 2, printing 3, 4, 5, ...
-page: (numbering-from: <intro>, numbering-start: 1)  // starts on the page carrying <intro>
+page: (numbering-start: 1)                           // the body starts at 1
+page: (numbering-from: 2)                            // page 2 prints 2, then 3, 4, ...
+page: (numbering-from: 2, numbering-start: 3)        // page 2 prints 3, then 4, 5, ...
+page: (numbering-from: <intro>, numbering-start: 1)  // the page of <intro> prints 1
 ```
 
-`numbering-from` takes a page position or the label of an element sitting on that page, so the anchor survives a foreword growing by a page. Pages before it print nothing, in the table of contents too.
+A label is safer than a position, because a foreword that grows by one page does not move the label. The pages before the first numbered page print no number. The table of contents also shows no number for these pages. Read [Page Numbering](REFERENCE.md#page-numbering) for the details.
 
-More in [Front Matter](REFERENCE.md#front-matter) and [Page Numbering](REFERENCE.md#page-numbering).
+## Change the look
 
-## Customization
-
-Everything goes through the single `config` dictionary. Overrides are partial at every depth, and an unknown key is an error naming the valid ones rather than a silent no-op.
+The `config` dictionary controls the look. Give only the keys you change. The other keys keep their default value. If you write an unknown key, the compilation stops, and the error message names the valid keys of that section.
 
 ```typst
 #show: clean-cnam-template.with(config: (
   colors: (primary: rgb("#00539F"), secondary: auto),   // auto = derived from primary
-  fonts: (title: (name: "Inter", weight: 700)),         // the weight cascades from `default`
-  page: (margin: (left: 2.5cm)),                        // the other margins stay put
+  fonts: (title: (name: "Inter", weight: 700)),         // the weight comes from `default`
+  page: (margin: (left: 2.5cm)),                        // the other margins do not move
   cover: (decorations: false, title: (size: 3em)),
-  headings: (chapter-style: "plain"),                   // level-1 headings stay in the flow
+  headings: (chapter-style: "plain"),                   // no chapter page
   outline: (depth: 2),
-  print: true,                                          // no link color or underline
+  print: true,                                          // no color and no underline on links
 ))
 ```
 
-| Section | Covers | Details |
-|---------|--------|---------|
-| `info` | title, subtitle, author(s), class, dates, logo | [reference](REFERENCE.md#info----document-metadata-and-cover-content) |
-| `colors` | primary, secondary, outline, page number, neutral ramp, math environments | [reference](REFERENCE.md#colors----semantic-palette) |
-| `fonts` | default, body, title, chapter, code, inline code, base size | [reference](REFERENCE.md#fonts----typography) |
-| `page` | margins, numbering pattern and anchors, number alignment | [reference](REFERENCE.md#page----page-setup) |
-| `cover` | background, decorations, second logo, and one dict per cover element | [reference](REFERENCE.md#cover-page-customization) |
-| `code` | accent and background, plus a color per language | [reference](REFERENCE.md#code----code-block-colors) |
-| `render` | hooks replacing the cover, decorations, header, footer or chapter page | [reference](REFERENCE.md#rendering-hooks) |
-| `headings` | chapter style, page break and "Chapitre N" label | [reference](REFERENCE.md#headings----level-1-heading-rendering) |
-| `outline` | enabled, custom content, indent, depth | [reference](REFERENCE.md#outline----table-of-contents) |
-| `front-matter` | the pages between the cover and the body | [reference](REFERENCE.md#front-matter) |
-| `lang`, `print`, `color-words` | language, print mode, auto-highlighted words | [reference](REFERENCE.md#top-level-keys) |
+| Section | What it controls | Details |
+|---------|------------------|---------|
+| `info` | Title, subtitle, authors, class, dates, logo | [reference](REFERENCE.md#info----document-metadata-and-cover-content) |
+| `colors` | Primary and secondary colors, outline, page numbers, neutral shades, math environments | [reference](REFERENCE.md#colors----semantic-palette) |
+| `fonts` | Fonts of the text, the titles, the chapters, the code, and the base size | [reference](REFERENCE.md#fonts----typography) |
+| `page` | Margins, numbering pattern, position of the number | [reference](REFERENCE.md#page----page-setup) |
+| `cover` | Background, decorations, second logo, and one dictionary for each element | [reference](REFERENCE.md#cover-page-customization) |
+| `code` | Accent color, background color, and one color for each language | [reference](REFERENCE.md#code----code-block-colors) |
+| `render` | Functions that replace the cover, the decorations, the header, the footer, or the chapter page | [reference](REFERENCE.md#rendering-hooks) |
+| `headings` | Style of the level-1 headings, page break, and the "Chapitre N" label | [reference](REFERENCE.md#headings----level-1-heading-rendering) |
+| `outline` | Table of contents: on or off, custom content, indent, depth | [reference](REFERENCE.md#outline----table-of-contents) |
+| `front-matter` | The pages between the cover and the body | [reference](REFERENCE.md#front-matter) |
+| `lang`, `print`, `color-words` | Language, print mode, words in the primary color | [reference](REFERENCE.md#top-level-keys) |
 
-### Themes and Presets
+### Themes and presets
 
-A theme is a partial configuration applied *under* your own, so anything it sets stays overridable. Pass an array to compose several, later layers winning:
+A theme is a configuration layer under your own configuration. Your `config` always wins over a theme. To apply several themes, pass an array. The last layer wins:
 
 ```typst
 #show: clean-cnam-template.with(
@@ -143,35 +160,21 @@ A theme is a partial configuration applied *under* your own, so anything it sets
 
 | Layer | Effect |
 |-------|--------|
-| `themes.cnam` | The defaults, spelled out |
-| `themes.sobre` | No decorative circles, neutral cover text |
-| `themes.dark` | Dark cover with white text |
-| `themes.monochrome` | Greyscale palette for black and white printing |
-| `presets.article` | Short pieces: in-flow level-1 headings, no decorations, tighter margins |
-| `presets.memoire` | Wider binding margin, two-level outline, date range on the cover |
-| `presets.tp` | Compact lab reports: 11pt body, tight margins, no outline |
+| `themes.cnam` | The default look, written in full |
+| `themes.sobre` | No decorative circles, and a neutral text on the cover |
+| `themes.dark` | A dark cover with white text |
+| `themes.monochrome` | Gray shades, for a black and white print |
+| `presets.article` | Short documents: no chapter page, no decorations, smaller margins |
+| `presets.memoire` | A larger left margin for the binding, a two-level outline, a date range on the cover |
+| `presets.tp` | Lab reports: 11pt text, small margins, no table of contents |
 
-Writing your own is writing a dictionary -- see [Themes and Presets](REFERENCE.md#themes-and-presets).
+To write your own theme, write a dictionary. Read [Themes and Presets](REFERENCE.md#themes-and-presets).
 
-## Development
+## Read more
 
-Recipes for working on the template itself, none of which ship in the package:
-
-| Command | Effect |
-|---------|--------|
-| `just themes` | List the shipped themes and presets, read from `src/lib/themes.typ` |
-| `just preview sobre` | Render `docs/preview.typ` with that theme or preset and open the PDF |
-| `just preview-all` | Render every theme and preset into `docs/preview/` |
-| `just new-theme NAME` / `just new-preset NAME` | Scaffold a skeleton entry |
-| `just test` | Run the test suite ([tytanic](https://github.com/typst-community/tytanic), binary `tt`) |
-
-Without tytanic installed, the tests are plain Typst documents whose assertions fail the compilation:
-
-```bash
-for t in tests/*/test.typ; do echo "== $t"; typst compile --root . "$t" --format pdf - >/dev/null; done
-```
-
-More in [Development](REFERENCE.md#development) and [Project Structure](REFERENCE.md#project-structure); [CHANGELOG.md](CHANGELOG.md) has what changed when.
+- [REFERENCE.md](REFERENCE.md) documents every key, every component parameter, and the advanced sections: cover, rendering hooks, print mode, heading variants, cross-references, code blocks.
+- [CHANGELOG.md](CHANGELOG.md) lists the changes of each version.
+- To work on the template itself, read [Development](REFERENCE.md#development).
 
 ## Author
 
@@ -179,9 +182,9 @@ More in [Development](REFERENCE.md#development) and [Project Structure](REFERENC
 
 ## Acknowledgements
 
-- [hzkonor/bubble-template](https://github.com/hzkonor/bubble-template), the original basis for this template.
-- [Ives-Natsume/typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI (MIT), the source of the code block styling.
-- [github-linguist/linguist](https://github.com/github-linguist/linguist) (MIT), the source of the per-language colors in `code.lang-colors`.
+- [hzkonor/bubble-template](https://github.com/hzkonor/bubble-template), the first basis of this template.
+- [Ives-Natsume/typst-endfield-doc-theme](https://github.com/Ives-Natsume/typst-endfield-doc-theme) by metasequoiaNI (MIT), the source of the style of the code blocks.
+- [github-linguist/linguist](https://github.com/github-linguist/linguist) (MIT), the source of the colors in `code.lang-colors`.
 
 ## License
 

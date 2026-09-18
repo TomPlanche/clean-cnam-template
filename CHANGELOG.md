@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Documentation split in two**: `README.md` is now a short tour -- quick start, components, front matter, customization, development -- and the exhaustive documentation moved to [`REFERENCE.md`](REFERENCE.md), which keeps every configuration table and every advanced section. Nothing was dropped except the `Recent Updates` and `Previous Updates` sections, which duplicated this changelog and still announced 1.6.7 as the latest release.
+- **Documentation split in two**: `README.md` is now a short guide for the people writing documents -- start a document, write the text, build the front matter, set the page numbers, change the look -- written in Simplified Technical English. The exhaustive documentation moved to [`REFERENCE.md`](REFERENCE.md), which keeps every configuration table, every advanced section, and the notes for working on the template itself. Nothing was dropped except the `Recent Updates` and `Previous Updates` sections, which duplicated this changelog and still announced 1.6.7 as the latest release.
 
 - **The outline no longer invents page numbers for unnumbered pages**: on a page whose numbering is off, Typst falls back to the raw page count when it renders an outline entry, so a table of contents could list "4" for a page printing nothing -- next to a body page printing 1 under a restarted count. An unnumbered page now contributes no page number to the outline, which also makes `page: (numbering: none)` mean what it says throughout the document.
 
