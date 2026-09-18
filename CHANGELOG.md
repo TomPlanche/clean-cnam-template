@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Documentation split in two**: `README.md` is now a short tour -- quick start, components, front matter, customization, development -- and the exhaustive documentation moved to [`REFERENCE.md`](REFERENCE.md), which keeps every configuration table and every advanced section. Nothing was dropped except the `Recent Updates` and `Previous Updates` sections, which duplicated this changelog and still announced 1.6.7 as the latest release.
+
 - **The outline no longer invents page numbers for unnumbered pages**: on a page whose numbering is off, Typst falls back to the raw page count when it renders an outline entry, so a table of contents could list "4" for a page printing nothing -- next to a body page printing 1 under a restarted count. An unnumbered page now contributes no page number to the outline, which also makes `page: (numbering: none)` mean what it says throughout the document.
 
 - **Front-matter titles follow the document typography**: the table of contents title, like every other front-matter title, now renders in `fonts.chapter` and `colors.primary` instead of Typst's default bold black heading, so the pages before the body read as part of the document. Its wording still comes from Typst, so it keeps following `lang`.
@@ -24,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ))
   ```
 
-  Sections: `info`, `colors`, `fonts`, `page`, `cover`, `render`, `headings`, `outline`, plus the top-level `lang`, `print` and `color-words`. See the migration table in the README for the mapping from the 1.x parameters.
+  Sections: `info`, `colors`, `fonts`, `page`, `cover`, `render`, `headings`, `outline`, plus the top-level `lang`, `print` and `color-words`. See the [migration table](REFERENCE.md#migrating-from-1x) for the mapping from the 1.x parameters.
 
 - **BREAKING: `colors.main` renamed to `colors.primary`**, and it now accepts a color object as well as a hex string.
 
