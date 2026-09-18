@@ -84,24 +84,26 @@
 
 // --- Page numbering ------------------------------------------------------------------
 //
-// Two independent knobs, `page.numbering-from` (which page starts printing a number) and
-// `page.numbering-start` (which number it prints), both `auto` by default. They are
-// implemented in page-counter space: a shift emitted once moves the counter, and the
-// numbering pattern refuses to print anything below the first expected number. Working on
-// the counter rather than on physical pages is what keeps the printed numbers, the outline
-// entries and the "n / total" denominator telling the same story.
+// Two independent knobs: `page.numbering-from`, the page the numbering starts printing on,
+// given either as a position counted from the cover or as the label of an element sitting
+// on it, and `page.numbering-start`, the number that page prints. Both are `auto`, meaning
+// "the first page of the body" and "its own position in the document".
+//
+// An anchored numbering is resolved when the number is printed: the pattern hides every
+// page before the anchor and offsets the ones after it. The page counter is left alone,
+// because Typst refuses a negative one -- "print 1 on page 4" would need it to start at -2
+// -- and because the footer, the outline entries and the "n / total" denominator all go
+// through this single function, so they cannot drift apart.
 
-// The first number the numbering ever prints, or `none` when numbering starts with the
-// body: which page that is cannot be known before layout, but the pages before it print
-// nothing anyway (see `_front-numbering`), so there is no threshold to apply.
-#let _first-printed-number(cfg) = {
-  if cfg.page.numbering-from == auto {
-    none
-  } else if cfg.page.numbering-start == auto {
-    cfg.page.numbering-from
-  } else {
-    cfg.page.numbering-start
+// Resolve a `page.numbering-from` label to the element it marks. Labels are known before
+// layout runs, so a missing one is a mistake worth reporting rather than a value that will
+// settle later. Must be called from a context.
+#let _anchor-location(lbl) = {
+  let anchored = query(lbl)
+  if anchored.len() == 0 {
+    panic("`page.numbering-from` points at " + repr(lbl) + ", which nothing in the document carries")
   }
+  anchored.first().location()
 }
 
 // A numbering that prints nothing, used for the pages that carry no number. Not the same
@@ -110,23 +112,37 @@
 #let _no-numbering = (..nums) => none
 
 // Value for `set page(numbering: ..)` on the pages that are numbered: the configured
-// pattern, in `colors.page-number` when it is set, and blank below the first expected
-// number (the pages before `page.numbering-from`, whose outline entries then show no page
-// number either). The bare pattern is handed back untouched when neither applies.
+// pattern, in `colors.page-number` when it is set, anchored when `page.numbering-from`
+// names a page. The bare pattern is handed back untouched when neither applies, which
+// keeps the PDF page labels Typst derives from it.
 #let _page-numbering(cfg) = {
   let pattern = cfg.page.numbering
-  let min = _first-printed-number(cfg)
-
   if pattern == none { return _no-numbering }
-  if min == none and cfg.colors.page-number == auto { return pattern }
 
-  (..nums) => {
-    // `nums` is (page, total) in a footer, (page,) in an outline entry.
-    if min != none and nums.pos().first() < min { return }
-
-    let printed = numbering(pattern, ..nums)
+  let paint(printed) = {
     if cfg.colors.page-number == auto { printed } else { text(fill: cfg.colors.page-number, printed) }
   }
+
+  // `nums` is (page, total) in a footer and (page,) in an outline entry; both move by the
+  // same offset, so the denominator stays the number the last page prints.
+  let anchored(nums, first-page) = {
+    if nums.pos().first() < first-page { return }
+
+    let offset = if cfg.page.numbering-start == auto { 0 } else { cfg.page.numbering-start - first-page }
+    paint(numbering(pattern, ..nums.pos().map(n => n + offset)))
+  }
+
+  let from = cfg.page.numbering-from
+  if type(from) == label {
+    // Where the anchor landed is only known once the document is laid out
+    return (..nums) => context anchored(nums, _anchor-location(from).page())
+  }
+  if type(from) == int { return (..nums) => anchored(nums, from) }
+
+  // Numbering starts with the body: `apply-styling` installs the pattern there and nowhere
+  // before it, so there is nothing to hide and nothing to offset.
+  if cfg.colors.page-number == auto { return pattern }
+  (..nums) => paint(numbering(pattern, ..nums))
 }
 
 // Value for `set page(numbering: ..)` on the cover and the front matter: numbered only
@@ -135,16 +151,10 @@
   if cfg.page.numbering-from == auto { _no-numbering } else { _page-numbering(cfg) }
 }
 
-// Page-counter shift for the very first page, so that page `page.numbering-from` prints
-// `page.numbering-start`. Nothing to do when the numbering starts with the body (see
-// `_body-counter-shift`) or when the count simply follows the pages.
-#let _front-counter-shift(cfg) = {
-  if cfg.page.numbering-from == auto or cfg.page.numbering-start == auto { return }
-  counter(page).update(cfg.page.numbering-start - cfg.page.numbering-from + 1)
-}
-
-// Page-counter shift for the first page of the body, where numbering starts by default.
-#let _body-counter-shift(cfg) = {
+// Page-counter reset for the first page of the body, where numbering starts by default.
+// The only place the counter is touched, and a legal one: the reset lands on the very page
+// that has to print `page.numbering-start`.
+#let _body-counter-start(cfg) = {
   if cfg.page.numbering-from != auto or cfg.page.numbering-start == auto { return }
   counter(page).update(cfg.page.numbering-start)
 }
@@ -258,7 +268,7 @@
 
   // On the page the rule above just opened, so the first body page is the one that prints
   // `page.numbering-start`.
-  _body-counter-shift(cfg)
+  _body-counter-start(cfg)
 
   show: great-theorems-init
 

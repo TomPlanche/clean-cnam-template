@@ -75,7 +75,9 @@
     margin: (top: 2.5cm, right: 1.27cm, bottom: 1.75cm, left: 1.27cm),
     numbering: "1 / 1",
     number-align: bottom + right,
-    // First page that carries a printed number, counted from the cover (page 1).
+    // First page that carries a printed number, either counted from the cover (page 1) or
+    // named by the label of an element sitting on it: `numbering-from: <chapA>` starts the
+    // numbering on the page that carries `<chapA>`.
     // `auto` starts at the first page of the body, leaving the cover and the front matter
     // unnumbered, which is the template's historical behavior.
     numbering-from: auto,
@@ -306,11 +308,17 @@
 
   cfg = merge-dicts(cfg, config, open: _open-paths)
 
-  // Page numbering anchors: both stay `auto` or hold an integer, and a start page only
-  // makes sense from the first page on.
+  // A `numbering-from` anchor may be written as a label or as the name inside it, the way
+  // a color may be written as a color or as a hex string.
+  if type(cfg.page.numbering-from) == str { cfg.page.numbering-from = label(cfg.page.numbering-from) }
+
+  // Page numbering anchors: a page counted from the cover, a label, or `auto`. A start
+  // page only makes sense from the first page on.
   assert(
-    cfg.page.numbering-from == auto or (type(cfg.page.numbering-from) == int and cfg.page.numbering-from >= 1),
-    message: "`page.numbering-from` must be `auto` or an integer >= 1",
+    cfg.page.numbering-from == auto
+      or type(cfg.page.numbering-from) == label
+      or (type(cfg.page.numbering-from) == int and cfg.page.numbering-from >= 1),
+    message: "`page.numbering-from` must be `auto`, an integer >= 1, or a label such as `<chapA>`",
   )
   assert(
     cfg.page.numbering-start == auto or type(cfg.page.numbering-start) == int,

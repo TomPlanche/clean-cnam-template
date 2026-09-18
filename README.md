@@ -90,10 +90,13 @@ That list happens to be the EiCnam dissertation layout, [spelled out in full](RE
 Page numbering has two anchors, both `auto` by default (numbering starts on the first page of the body, printing that page's own position):
 
 ```typst
-page: (numbering-start: 1)                      // the body opens at 1
-page: (numbering-from: 2)                       // numbering starts on page 2: 2, 3, 4, ...
-page: (numbering-from: 2, numbering-start: 3)   // starts on page 2, printing 3, 4, 5, ...
+page: (numbering-start: 1)                       // the body opens at 1
+page: (numbering-from: 2)                        // numbering starts on page 2: 2, 3, 4, ...
+page: (numbering-from: 2, numbering-start: 3)    // starts on page 2, printing 3, 4, 5, ...
+page: (numbering-from: <intro>, numbering-start: 1)  // starts on the page carrying <intro>
 ```
+
+`numbering-from` takes a page position or the label of an element sitting on that page, so the anchor survives a foreword growing by a page. Pages before it print nothing, in the table of contents too.
 
 More in [Front Matter](REFERENCE.md#front-matter) and [Page Numbering](REFERENCE.md#page-numbering).
 

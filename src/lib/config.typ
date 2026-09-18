@@ -7,7 +7,7 @@
 // modules
 #import "store.typ": default-config, get-config, get-fonts, resolve-config, set-config
 #import "components.typ": blockquote, code, my-block
-#import "layout.typ": _front-counter-shift, _front-numbering, add-decorations, apply-styling, create-title-page, no-big-title, no-numbering
+#import "layout.typ": _front-numbering, add-decorations, apply-styling, create-title-page, no-big-title, no-numbering
 #import "utils.typ": ar, author-names, format-authors, icon, merge-dicts
 
 // Re-export components for easy access
@@ -47,8 +47,9 @@
  *   `(name, weight)` dict (`chapter` also takes `size`); `auto` members cascade from
  *   `default`, or from `title` for `chapter` and from `body` for `inline-raw`.
  * - `page`: margin (top, right, bottom, left), numbering, number-align, numbering-from
- *   (first page that prints a number, `auto` = the first page of the body) and
- *   numbering-start (the number it prints, `auto` = its own position in the document).
+ *   (first page that prints a number: a position, a label such as `<chapA>`, or `auto` for
+ *   the first page of the body) and numbering-start (the number that page prints, `auto` =
+ *   its own position in the document).
  * - `cover`: bg, decorations, second-logo (image, scale, dx, dy), padding, spacing, and one
  *   dict per element (title, subtitle, subsubtitle, date, author) with text, color, weight,
  *   size, font and align. A `text` key overrides the matching `info` field.
@@ -94,17 +95,15 @@
   set text(lang: cfg.lang)
 
   // Apply page margins and cover background (none = transparent). The numbering is only
-  // installed here when it has to start before the body; otherwise the cover and the front
-  // matter stay unnumbered and `apply-styling` starts the count on the first body page.
+  // installed here when `page.numbering-from` names a page, since that page may come
+  // before the body; otherwise the cover and the front matter stay unnumbered and
+  // `apply-styling` starts the count on the first body page.
   set page(
     margin: cfg.page.margin,
     fill: cfg.cover.bg,
     numbering: _front-numbering(cfg),
     number-align: cfg.page.number-align,
   )
-
-  // On page one, so that page `page.numbering-from` prints `page.numbering-start`
-  _front-counter-shift(cfg)
 
   // Conditionally add decorative elements
   if cfg.cover.decorations {

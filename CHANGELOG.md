@@ -71,12 +71,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`page.numbering-from` and `page.numbering-start`**: where the page numbering starts printing, and the number it starts at. Both `auto` by default, which keeps the previous behavior -- numbering begins on the first page of the body and prints that page's own position.
 
   ```typst
-  page: (numbering-start: 1)                      // the body opens at 1
-  page: (numbering-from: 2)                       // numbering starts on page 2: 2, 3, 4, ...
-  page: (numbering-from: 2, numbering-start: 3)   // starts on page 2, printing 3, 4, 5, ...
+  page: (numbering-start: 1)                           // the body opens at 1
+  page: (numbering-from: 2)                            // numbering starts on page 2: 2, 3, 4, ...
+  page: (numbering-from: 2, numbering-start: 3)        // starts on page 2, printing 3, 4, 5, ...
+  page: (numbering-from: <intro>, numbering-start: 1)  // starts on the page carrying <intro>
   ```
 
-  Both act on the page counter rather than on the footer alone, so the outline entries, the `"n / total"` denominator and the printed numbers agree. Pages before `numbering-from` print no number, and show none in the outline either.
+  `numbering-from` takes a page position or a label, so the anchor can point at an element (`= Introduction <intro>`) and survive a foreword growing by a page; `"intro"` is accepted for the label too, the way a color accepts a hex string, and a label nothing carries stops the compilation naming it.
+
+  The printed numbers, the outline entries and the `"n / total"` denominator all come out of one function, so they agree by construction: the denominator is the number the last page prints, and a page that prints nothing shows no page number in the outline either. An anchored numbering offsets what it prints instead of moving the page counter, which is what makes `numbering-from: <intro>, numbering-start: 1` expressible at all -- Typst refuses a page counter starting below zero.
 
 - **Rendering hooks**: the cover, the decorations, the page header, the page footer and the decorated chapter page are now configuration values rather than hard-coded calls. Set `render.<name>` to a function and it replaces the built-in, receiving the resolved configuration.
 

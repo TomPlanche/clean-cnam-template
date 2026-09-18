@@ -141,7 +141,7 @@ Components derive their shades from this palette, so overriding `neutral-light` 
 | `margin` | dictionary | `(top: 2.5cm, right: 1.27cm, bottom: 1.75cm, left: 1.27cm)` | Page margins, partial overrides supported |
 | `numbering` | string | `"1 / 1"` | Page numbering pattern |
 | `number-align` | alignment | `bottom + right` | Page number placement |
-| `numbering-from` | int / auto | `auto` | First page that prints a number, counted from the cover (page 1). `auto` starts on the first page of the body, leaving the cover and the front matter unnumbered. |
+| `numbering-from` | int / label / auto | `auto` | First page that prints a number: a position counted from the cover (page 1), or the label of an element sitting on that page (`<chapA>`, or `"chapA"`). `auto` starts on the first page of the body, leaving the cover and the front matter unnumbered. |
 | `numbering-start` | int / auto | `auto` | Number printed on that first numbered page. `auto` prints its own position in the document, so the count never restarts. |
 
 See [Page Numbering](#page-numbering) for how the two combine.
@@ -347,7 +347,7 @@ The two sections are listed in the table of contents that follows them; pass `ou
 
 Two independent anchors, both `auto` by default:
 
-- `page.numbering-from` -- the first page that prints a number, counted from the cover (page 1). `auto` means the first page of the body, which leaves the cover and the front matter unnumbered.
+- `page.numbering-from` -- the first page that prints a number. Either a position counted from the cover (page 1), or the label of an element sitting on that page. `auto` means the first page of the body, which leaves the cover and the front matter unnumbered.
 - `page.numbering-start` -- the number that page prints. `auto` means its own position in the document, so the count never restarts.
 
 ```typst
@@ -361,7 +361,26 @@ page: (numbering-from: 2)
 page: (numbering-from: 2, numbering-start: 3)
 ```
 
-Both work on the page counter rather than on the printed footer alone, so the table of contents, the `"n / total"` denominator and the page numbers under the pages always tell the same story. Pages before `numbering-from` print nothing, and their entries in the table of contents show no page number either.
+### Starting from a label
+
+Counting pages by hand breaks the day a foreword grows by a page. Point the anchor at an element instead, and the numbering starts on whichever page that element lands on:
+
+```typst
+#show: clean-cnam-template.with(config: (
+  page: (numbering-from: <intro>, numbering-start: 1),
+  front-matter: (pages: ("blank", "cover-text", (title: "Avant-propos", body: [ ... ]), "outline")),
+))
+
+= Introduction <intro>   // this page prints 1, the ones before it print nothing
+```
+
+The label is the ordinary Typst label of any element -- a heading, a figure, a `#metadata(none)<anchor>` marker of your own. `numbering-from: "intro"` is accepted as well, the way a color accepts a hex string. A label nothing carries stops the compilation naming it, rather than numbering the wrong page.
+
+### How the two combine
+
+The page number the reader sees, the entries of the table of contents and the `"n / total"` denominator all come out of one function, so they can never disagree: the denominator is the number the last page prints, and a page that prints nothing -- everything before `numbering-from` -- shows no page number in the outline either.
+
+The page counter itself is left alone whenever the anchor names a page, which is why `numbering-from: <intro>, numbering-start: 1` works at all: Typst refuses a page counter starting below zero, and "print 1 on page 4" would need it to start at -2. Your own `counter(page)` reads therefore keep returning the position of the page in the document. The one exception is the default anchor (`numbering-from: auto`): there the count really does restart on the first page of the body, since that page is a legal place to reset the counter.
 
 ## Cover Page Customization
 

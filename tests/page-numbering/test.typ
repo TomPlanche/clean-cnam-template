@@ -16,14 +16,25 @@
 
 = Chapitre A <chapA>
 
+// What a page really prints, read from the numbering in effect on it.
+#let printed(loc) = {
+  let pattern = loc.page-numbering()
+  if pattern == none { return none }
+  let shown = numbering(pattern, ..counter(page).at(loc))
+  if shown in (none, []) { none } else { shown }
+}
+
 #context {
   let loc = query(<chapA>).first().location()
 
   // Cover, outline, then the body.
   assert.eq(loc.page(), 3, message: "the body must open on the third page")
   assert.eq(
-    counter(page).at(loc).first(),
-    5,
+    printed(loc),
+    "5",
     message: "the third page must print 5: the count starts at 3 on page 1",
   )
+
+  // The page counter is never shifted: an anchored numbering offsets what it prints.
+  assert.eq(counter(page).at(loc).first(), 3, message: "the page counter must stay untouched")
 }
