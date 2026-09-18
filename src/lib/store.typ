@@ -75,6 +75,24 @@
     margin: (top: 2.5cm, right: 1.27cm, bottom: 1.75cm, left: 1.27cm),
     numbering: "1 / 1",
     number-align: bottom + right,
+    // First page that carries a printed number, counted from the cover (page 1).
+    // `auto` starts at the first page of the body, leaving the cover and the front matter
+    // unnumbered, which is the template's historical behavior.
+    numbering-from: auto,
+    // Number printed on that first numbered page.
+    // `auto` prints its own position in the document, i.e. the count never restarts.
+    numbering-start: auto,
+  ),
+
+  // Pages inserted between the cover and the body, in the order given, one page each.
+  // Entries are either the name of a built-in page ("blank", "cover-text", "outline",
+  // "figures", "tables"), a dictionary describing a section of your own
+  // (`(title: .., body: .., outlined: ..)`) or one of those built-ins with a custom title
+  // (`(kind: "figures", title: ..)`), or any content, rendered as the page itself.
+  // A page body -- `body`, or a bare entry -- may also be a `(cfg) => content` function,
+  // called with the resolved configuration like the `render.*` hooks.
+  front-matter: (
+    pages: ("outline",),
   ),
 
   cover: (
@@ -181,7 +199,7 @@
   // exported as `default-cover`, `default-decorations`, `default-header` and
   // `default-chapter`, so a hook can wrap one instead of starting from scratch.
   render: (
-    cover: auto,        // (cfg) => content, the cover page only (no page break, no outline)
+    cover: auto,        // (cfg) => content, the cover page only (no page break, no front matter)
     decorations: auto,  // (cfg) => content, the placed shapes behind the cover
     header: auto,       // (cfg) => content, the running page header
     footer: auto,       // (cfg) => content, replaces the page-numbering footer entirely
@@ -287,6 +305,21 @@
   }
 
   cfg = merge-dicts(cfg, config, open: _open-paths)
+
+  // Page numbering anchors: both stay `auto` or hold an integer, and a start page only
+  // makes sense from the first page on.
+  assert(
+    cfg.page.numbering-from == auto or (type(cfg.page.numbering-from) == int and cfg.page.numbering-from >= 1),
+    message: "`page.numbering-from` must be `auto` or an integer >= 1",
+  )
+  assert(
+    cfg.page.numbering-start == auto or type(cfg.page.numbering-start) == int,
+    message: "`page.numbering-start` must be `auto` or an integer",
+  )
+  assert(
+    type(cfg.front-matter.pages) == array,
+    message: "`front-matter.pages` must be an array, found " + str(type(cfg.front-matter.pages)),
+  )
 
   // Dates and academic year
   if cfg.info.start-date == auto { cfg.info.start-date = datetime.today() }

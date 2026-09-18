@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **The outline no longer invents page numbers for unnumbered pages**: on a page whose numbering is off, Typst falls back to the raw page count when it renders an outline entry, so a table of contents could list "4" for a page printing nothing -- next to a body page printing 1 under a restarted count. An unnumbered page now contributes no page number to the outline, which also makes `page: (numbering: none)` mean what it says throughout the document.
+
+- **Front-matter titles follow the document typography**: the table of contents title, like every other front-matter title, now renders in `fonts.chapter` and `colors.primary` instead of Typst's default bold black heading, so the pages before the body read as part of the document. Its wording still comes from Typst, so it keeps following `lang`.
+
 - **BREAKING: single configuration object**: `clean-cnam-template` now takes one parameter, `config`, a nested dictionary, instead of eighteen named parameters. The dictionary is merged over `default-config`, resolved once, and published to a document-wide state (`store.typ`) that every module reads.
 
   ```typst
@@ -41,6 +45,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING: `headers.typ` removed**, along with `get-header`, `build-main-header` and `is-after`. The module was superseded by `hydra` and its only call site was a commented-out line; it was still re-exported from `lib.typ`, so those three names disappear from the package namespace.
 
 ### Added
+
+- **`front-matter.pages`, the ordered list of pages between the cover and the body**: one entry, one page, in the order given. Entries are the built-in page names `"blank"`, `"cover-text"`, `"outline"`, `"figures"` and `"tables"`, a dictionary describing a section of your own (`(title: .., body: .., outlined: ..)`) or a built-in with a title of your own (`(kind: "figures", title: ..)`), or plain content, rendered as the page itself.
+
+  ```typst
+  #show: clean-cnam-template.with(config: (front-matter: (pages: (
+    "blank",
+    "cover-text",
+    (title: "Avant-propos", body: [...]),
+    (title: "Remerciements", body: [...]),
+    "outline",
+    "figures",
+    "tables",
+  ))))
+  ```
+
+  This is also how the outline is placed: `outline.enabled` says *whether* there is a table of contents, `front-matter.pages` says *where* it goes, so inserting a foreword before it does not mean renumbering anything. The default, `("outline",)`, reproduces the previous layout. A `"outline"` entry with `outline.enabled: false` renders nothing and leaves no page behind.
+
+  A page body -- `body`, or a bare entry -- is content or a `(cfg) => content` function, called with the resolved configuration like the `render.*` hooks, so a long section can live in its own function or its own file and still read the palette and the metadata.
+
+  Sections of your own are unnumbered level-1 headings, listed in the table of contents unless they pass `outlined: false`. `"cover-text"` re-renders the cover text through the `render.cover` hook, without the logo, on the cover background. An unknown page name or entry key is an error naming the valid ones.
+
+- **`page.numbering-from` and `page.numbering-start`**: where the page numbering starts printing, and the number it starts at. Both `auto` by default, which keeps the previous behavior -- numbering begins on the first page of the body and prints that page's own position.
+
+  ```typst
+  page: (numbering-start: 1)                      // the body opens at 1
+  page: (numbering-from: 2)                       // numbering starts on page 2: 2, 3, 4, ...
+  page: (numbering-from: 2, numbering-start: 3)   // starts on page 2, printing 3, 4, 5, ...
+  ```
+
+  Both act on the page counter rather than on the footer alone, so the outline entries, the `"n / total"` denominator and the printed numbers agree. Pages before `numbering-from` print no number, and show none in the outline either.
 
 - **Rendering hooks**: the cover, the decorations, the page header, the page footer and the decorated chapter page are now configuration values rather than hard-coded calls. Set `render.<name>` to a function and it replaces the built-in, receiving the resolved configuration.
 

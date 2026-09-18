@@ -22,7 +22,7 @@ This template uses the following external packages:
 │   │   ├── themes.typ     # Shipped themes and document presets
 │   │   ├── config.typ     # Template entrypoint (clean-cnam-template)
 │   │   ├── components.typ # UI components (blockquote, my-block, code)
-│   │   ├── layout.typ     # Document layout and styling
+│   │   ├── layout.typ     # Document layout, front matter and styling
 │   │   ├── utils.typ      # Utility functions
 │   │   ├── colors.typ     # Color definitions
 │   │   └── math.typ       # Mathematical environments
@@ -42,6 +42,8 @@ This template uses the following external packages:
 - **Modular Design**: Template split into logical, maintainable modules
 - **Single Configuration Object**: One nested `config` dictionary drives the whole document, and every component reads it
 - **Themes and Presets**: Composable configuration layers for the look (`sobre`, `dark`, `monochrome`) and the document shape (`article`, `memoire`, `tp`)
+- **Front Matter**: An ordered list of the pages between the cover and the body -- blank page, cover text, outline, list of figures, list of tables, sections of your own
+- **Page Numbering Anchors**: Choose the page where the numbering starts printing, and the number it starts at
 - **Typo Protection**: An unknown configuration key raises an error naming the valid keys, instead of being silently ignored
 - **CNAM Branding**: Official CNAM colors and styling
 - **Themeable Components**: Blocks, quotes, code and math environments derive their colors from the palette
@@ -167,6 +169,10 @@ Components derive their shades from this palette, so overriding `neutral-light` 
 | `margin` | dictionary | `(top: 2.5cm, right: 1.27cm, bottom: 1.75cm, left: 1.27cm)` | Page margins, partial overrides supported |
 | `numbering` | string | `"1 / 1"` | Page numbering pattern |
 | `number-align` | alignment | `bottom + right` | Page number placement |
+| `numbering-from` | int / auto | `auto` | First page that prints a number, counted from the cover (page 1). `auto` starts on the first page of the body, leaving the cover and the front matter unnumbered. |
+| `numbering-start` | int / auto | `auto` | Number printed on that first numbered page. `auto` prints its own position in the document, so the count never restarts. |
+
+See [Page Numbering](#page-numbering) for how the two combine.
 
 #### `code` -- code block colors
 
@@ -205,10 +211,18 @@ The built-ins are exported as `default-cover`, `default-decorations`, `default-h
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `enabled` | bool | `true` | Render the table of contents after the cover |
-| `custom` | content / none | `none` | Content rendered instead of the default outline |
+| `enabled` | bool | `true` | Render the table of contents. *Whether*, not *where*: its page comes from `front-matter.pages`. |
+| `custom` | content / none | `none` | Content rendered instead of the default outline, on the same page |
 | `indent` | function / auto | `auto` | Passed to Typst's `outline(indent: ..)` |
 | `depth` | int / none | `none` | Deepest level shown. `none` = every level. |
+
+#### `front-matter` -- pages between the cover and the body
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `pages` | array | `("outline",)` | The pages between the cover and the body, one page per entry, in the order given |
+
+Each entry is a built-in page name (`"blank"`, `"cover-text"`, `"outline"`, `"figures"`, `"tables"`), a dictionary describing a section of your own (`(title: .., body: .., outlined: ..)`) or a built-in with a custom title (`(kind: "figures", title: ..)`), or any content, rendered as the page itself. See [Front Matter](#front-matter).
 
 #### Top-level keys
 
@@ -326,6 +340,106 @@ Two removals to be aware of:
 Because unknown keys now raise an error, a document still written against the 1.x API fails immediately with a message naming the offending option, rather than compiling with the setting silently ignored.
 
 ## Advanced Configuration
+
+### Front Matter
+
+`front-matter.pages` is the ordered list of pages between the cover and the body. One entry, one page, in the order given. "Which page is the outline on?" is answered by where `"outline"` sits in that list, so inserting a preface never means renumbering anything.
+
+```typst
+#show: clean-cnam-template.with(config: (
+  front-matter: (pages: ("blank", "cover-text", "outline")),
+))
+```
+
+The default is `("outline",)`: the cover, the table of contents, then the body.
+
+#### Entry Forms
+
+| Entry | Renders |
+|-------|---------|
+| `"blank"` | An empty page |
+| `"cover-text"` | The cover's text block again, without the logo and without the decorations, on the cover background. The page that repeats what the cover says. |
+| `"outline"` | The table of contents, exactly as the `outline` section configures it (`custom` included). Skipped, leaving no page behind, when `outline.enabled` is `false`. |
+| `"figures"` | The list of figures ("Table des figures") |
+| `"tables"` | The list of tables ("Liste des tableaux") |
+| `(title: .., body: .., outlined: ..)` | A section of your own: an unnumbered title followed by its content. `title` is optional, `outlined` defaults to `true`, which lists the section in the table of contents. |
+| `(kind: "figures", title: ..)` | A built-in page with a title of your own |
+| any content | The page content itself, untitled |
+
+#### Sections Written as Functions
+
+A page body -- `body`, or a bare entry -- may be content, or a `(cfg) => content` function called with the resolved configuration, exactly like the [rendering hooks](#rendering-hooks). Keeping a long section in its own function, or its own file, is then just a matter of naming it:
+
+```typst
+#let avant-propos(cfg) = [
+  Ce mémoire porte sur #cfg.info.title, soutenu en #cfg.info.year.
+]
+
+// a function that needs nothing from the configuration can simply be called
+#let remerciements() = [ Je remercie ... ]
+
+#show: clean-cnam-template.with(config: (
+  front-matter: (pages: (
+    (title: "Avant-propos", body: avant-propos),      // the function, called with the config
+    (title: "Remerciements", body: remerciements()),  // its result, plain content
+  )),
+))
+```
+
+Both forms behave identically otherwise: same page, same title styling, same outline entry.
+
+Every front-matter title -- yours, and the ones the lists render themselves -- uses `fonts.chapter` in `colors.primary`, unnumbered, so the front matter reads as part of the document without pulling in the decorated chapter page. Front-matter pages carry neither the running header nor a `render.footer` of yours, both of which belong to the body, and no page number unless `page.numbering-from` says otherwise.
+
+#### A Full Front Matter
+
+The EiCnam dissertation layout -- cover, blank page, cover text again, foreword, acknowledgements, table of contents, list of figures, list of tables, then the body numbered from 1 -- is that list spelled out:
+
+```typst
+#show: clean-cnam-template.with(
+  theme: presets.memoire,
+  config: (
+    info: (title: "Mémoire d'ingénieur", author: "Tom Planche", class: "EiCnam"),
+    page: (numbering-start: 1),
+    front-matter: (pages: (
+      "blank",
+      "cover-text",
+      (title: "Avant-propos", body: [
+        Ce mémoire a été rédigé dans le cadre de ...
+      ]),
+      (title: "Remerciements", body: [
+        Je remercie ...
+      ]),
+      "outline",
+      "figures",
+      "tables",
+    )),
+  ),
+)
+
+= Introduction
+```
+
+The two sections are listed in the table of contents that follows them; pass `outlined: false` to keep one out of it.
+
+### Page Numbering
+
+Two independent anchors, both `auto` by default:
+
+- `page.numbering-from` -- the first page that prints a number, counted from the cover (page 1). `auto` means the first page of the body, which leaves the cover and the front matter unnumbered.
+- `page.numbering-start` -- the number that page prints. `auto` means its own position in the document, so the count never restarts.
+
+```typst
+// The body opens at 1, the cover and the front matter stay unnumbered
+page: (numbering-start: 1)
+
+// Numbering starts on page 2 and prints 2, 3, 4, ...
+page: (numbering-from: 2)
+
+// Numbering starts on page 2, printing 3 there, then 4, 5, ...
+page: (numbering-from: 2, numbering-start: 3)
+```
+
+Both work on the page counter rather than on the printed footer alone, so the table of contents, the `"n / total"` denominator and the page numbers under the pages always tell the same story. Pages before `numbering-from` print nothing, and their entries in the table of contents show no page number either.
 
 ### Cover Page Customization
 
@@ -613,7 +727,7 @@ See @analyse and @methode.   // "See Section I and Section I.I."
 
 ## Custom Outline
 
-The template allows you to customize or disable the table of contents (outline) on the title page:
+The `outline` section says *what* the table of contents looks like; [`front-matter.pages`](#front-matter) says *which page* it lands on.
 
 ### Default Outline
 ```typst
@@ -636,6 +750,16 @@ You can provide your own outline configuration:
 ))
 ```
 
+The custom content replaces the default outline on the page the front matter gives it, so it can be moved around like any other front-matter page:
+
+```typst
+#show: clean-cnam-template.with(config: (
+  outline: (custom: your-outline-code),
+  // after the foreword rather than right after the cover
+  front-matter: (pages: ((title: "Avant-propos", body: [...]), "outline")),
+))
+```
+
 ### Disable Outline
 To disable the outline completely:
 ```typst
@@ -644,6 +768,8 @@ To disable the outline completely:
   outline: (enabled: false),
 ))
 ```
+
+The `"outline"` front-matter entry then renders nothing and leaves no page behind, so there is no need to touch `front-matter.pages` as well.
 
 ## Code Blocks
 

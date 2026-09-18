@@ -12,6 +12,10 @@
     start-date: datetime(day: 7, month: 9, year: 2025),
   ),
   colors: (primary: "#C4122E"),
+  // Pages between the cover and the body, one per entry:
+  // front-matter: (pages: ("blank", "cover-text", (title: "Avant-propos", body: [..]), "outline", "figures", "tables")),
+  // Page numbering: which page starts printing a number, and which number it prints:
+  // page: (numbering-from: 2, numbering-start: 1),
 ))
 
 = Main title

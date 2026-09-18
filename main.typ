@@ -13,6 +13,10 @@
   ),
   colors: (primary: "#C4122E"),
   // outline: (custom: your-outline-code),
+  // Front matter: one page per entry, between the cover and the body
+  // front-matter: (pages: ("blank", "cover-text", (title: "Avant-propos", body: [..]), "outline", "figures", "tables")),
+  // Page numbering: where it starts printing, and the number it starts at
+  // page: (numbering-from: 2, numbering-start: 1),
   // Cover page customization example:
   // cover: (
   //   bg: rgb("#1a1a2e"),

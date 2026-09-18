@@ -23,9 +23,13 @@
   lang: (
     fr: (
       chapter: "Chapitre",
+      figures: "Table des figures",
+      tables: "Liste des tableaux",
     ),
     en: (
       chapter: "Chapter",
+      figures: "List of figures",
+      tables: "List of tables",
     ),
   ),
 )
@@ -72,16 +76,77 @@
   m
 }
 
-/**
- * Apply document styling and layout configuration.
- *
- * @param cfg - The resolved configuration dictionary
- * @param body - The document content
- */
 // Resolve a rendering hook: `auto` selects the built-in implementation.
 #let _hook(cfg, name, fallback) = {
   let hook = cfg.render.at(name)
   if hook == auto { fallback } else { hook }
+}
+
+// --- Page numbering ------------------------------------------------------------------
+//
+// Two independent knobs, `page.numbering-from` (which page starts printing a number) and
+// `page.numbering-start` (which number it prints), both `auto` by default. They are
+// implemented in page-counter space: a shift emitted once moves the counter, and the
+// numbering pattern refuses to print anything below the first expected number. Working on
+// the counter rather than on physical pages is what keeps the printed numbers, the outline
+// entries and the "n / total" denominator telling the same story.
+
+// The first number the numbering ever prints, or `none` when numbering starts with the
+// body: which page that is cannot be known before layout, but the pages before it print
+// nothing anyway (see `_front-numbering`), so there is no threshold to apply.
+#let _first-printed-number(cfg) = {
+  if cfg.page.numbering-from == auto {
+    none
+  } else if cfg.page.numbering-start == auto {
+    cfg.page.numbering-from
+  } else {
+    cfg.page.numbering-start
+  }
+}
+
+// A numbering that prints nothing, used for the pages that carry no number. Not the same
+// as `numbering: none`: on a page without a numbering, Typst falls back to the raw page
+// count in outline entries, so the outline would list numbers the pages never print.
+#let _no-numbering = (..nums) => none
+
+// Value for `set page(numbering: ..)` on the pages that are numbered: the configured
+// pattern, in `colors.page-number` when it is set, and blank below the first expected
+// number (the pages before `page.numbering-from`, whose outline entries then show no page
+// number either). The bare pattern is handed back untouched when neither applies.
+#let _page-numbering(cfg) = {
+  let pattern = cfg.page.numbering
+  let min = _first-printed-number(cfg)
+
+  if pattern == none { return _no-numbering }
+  if min == none and cfg.colors.page-number == auto { return pattern }
+
+  (..nums) => {
+    // `nums` is (page, total) in a footer, (page,) in an outline entry.
+    if min != none and nums.pos().first() < min { return }
+
+    let printed = numbering(pattern, ..nums)
+    if cfg.colors.page-number == auto { printed } else { text(fill: cfg.colors.page-number, printed) }
+  }
+}
+
+// Value for `set page(numbering: ..)` on the cover and the front matter: numbered only
+// when the document asked for the numbering to start there.
+#let _front-numbering(cfg) = {
+  if cfg.page.numbering-from == auto { _no-numbering } else { _page-numbering(cfg) }
+}
+
+// Page-counter shift for the very first page, so that page `page.numbering-from` prints
+// `page.numbering-start`. Nothing to do when the numbering starts with the body (see
+// `_body-counter-shift`) or when the count simply follows the pages.
+#let _front-counter-shift(cfg) = {
+  if cfg.page.numbering-from == auto or cfg.page.numbering-start == auto { return }
+  counter(page).update(cfg.page.numbering-start - cfg.page.numbering-from + 1)
+}
+
+// Page-counter shift for the first page of the body, where numbering starts by default.
+#let _body-counter-shift(cfg) = {
+  if cfg.page.numbering-from != auto or cfg.page.numbering-start == auto { return }
+  counter(page).update(cfg.page.numbering-start)
 }
 
 /**
@@ -154,6 +219,15 @@
   thin-line(primary)
 }
 
+/**
+ * Apply document styling and layout configuration, and render the body.
+ *
+ * The `set page` rule below always opens a fresh page, so the body starts on a page of its
+ * own: this is where the page numbering begins when `page.numbering-from` is `auto`.
+ *
+ * @param cfg - The resolved configuration dictionary
+ * @param body - The document content
+ */
 #let apply-styling(cfg, body) = {
   let primary = cfg.colors.primary
   let body-font = cfg.fonts.body
@@ -168,11 +242,7 @@
     header-ascent: 50%,
     footer-descent: 50%,
     margin: margin,
-    numbering: if cfg.colors.page-number != auto {
-      (..nums) => text(fill: cfg.colors.page-number, numbering(cfg.page.numbering, ..nums))
-    } else {
-      cfg.page.numbering
-    },
+    numbering: _page-numbering(cfg),
     number-align: cfg.page.number-align,
 
     header: (_hook(cfg, "header", default-header))(cfg),
@@ -185,6 +255,10 @@
       (cfg.render.footer)(cfg)
     },
   )
+
+  // On the page the rule above just opened, so the first body page is the one that prints
+  // `page.numbering-start`.
+  _body-counter-shift(cfg)
 
   show: great-theorems-init
 
@@ -376,7 +450,7 @@
  * at the bottom.
  *
  * Returns the cover page content only. The page break that follows it, the background
- * reset and the outline belong to `create-title-page`, not here.
+ * reset and the front matter belong to `create-title-page`, not here.
  *
  * Replaceable through `render.cover`.
  *
@@ -487,11 +561,161 @@
   )
 }
 
+// --- Front matter --------------------------------------------------------------------
+//
+// `front-matter.pages` is the ordered list of pages between the cover and the body, so
+// "which page carries the outline" is answered by where "outline" sits in that list,
+// rather than by a page number that every later edit would invalidate.
+
+// The built-in front-matter pages.
+#let _front-matter-builtins = ("blank", "cover-text", "outline", "figures", "tables")
+
+// The keys a dictionary entry may carry.
+#let _front-matter-keys = ("kind", "title", "body", "outlined")
+
+// Normalize one `front-matter.pages` entry to (kind, title, body, outlined), `kind` being
+// a built-in name or "section" for a section of your own. `title: auto` means "not given":
+// the built-in default title for a built-in page, no title at all for a section.
+#let _front-matter-entry(entry) = {
+  let defaults = (kind: "section", title: auto, body: none, outlined: true)
+
+  if type(entry) == str {
+    if entry not in _front-matter-builtins {
+      panic(
+        "unknown front-matter page `" + entry + "`. Valid names: "
+          + _front-matter-builtins.join(", ")
+          + ". A section of your own is a `(title: .., body: ..)` dictionary.",
+      )
+    }
+    return (..defaults, kind: entry)
+  }
+
+  // Anything that is not a name and not a dictionary is content: it *is* the page.
+  if type(entry) != dictionary { return (..defaults, body: entry) }
+
+  for key in entry.keys() {
+    if key not in _front-matter-keys {
+      panic(
+        "unknown key `" + key + "` in a `front-matter.pages` entry. Valid keys: "
+          + _front-matter-keys.join(", "),
+      )
+    }
+  }
+
+  let out = defaults + entry
+
+  if out.kind != "section" and out.kind not in _front-matter-builtins {
+    panic(
+      "unknown front-matter page kind " + repr(out.kind) + ". Valid kinds: "
+        + _front-matter-builtins.join(", "),
+    )
+  }
+  if out.kind != "section" and out.body != none {
+    panic(
+      "`body` does not apply to the built-in front-matter page `" + out.kind
+        + "`; drop `kind` to write a section of your own instead",
+    )
+  }
+
+  out
+}
+
+// Outline entry styling, shared by the table of contents and the figure and table lists:
+// every entry links to its target, in `colors.outline` when the palette pins one.
+#let _outline-entries(cfg, body) = {
+  show outline.entry: it => {
+    if cfg.colors.outline != auto {
+      set text(fill: cfg.colors.outline)
+      link(it.element.location(), it.indented(it.prefix(), it.inner()))
+    } else {
+      link(it.element.location(), it.indented(it.prefix(), it.inner()))
+    }
+  }
+  body
+}
+
+// Front-matter titles all read the same way: the plain chapter look, never numbered. The
+// rule also catches the title `outline()` renders on its own, so the table of contents is
+// titled like the pages around it.
+#let _front-matter-styling(cfg, body) = {
+  show heading.where(level: 1): it => block(
+    below: 1.2em,
+    text(
+      font: cfg.fonts.chapter.name,
+      weight: cfg.fonts.chapter.weight,
+      size: cfg.fonts.chapter.size,
+      fill: cfg.colors.primary,
+      it.body,
+    ),
+  )
+  body
+}
+
+// A page body: content, or a function of the resolved configuration, as the `render.*`
+// hooks take, so a section can be written next to the rest of its own styling and still
+// read the palette, the fonts and the document metadata.
+#let _front-matter-body(cfg, body) = {
+  if type(body) == function { body(cfg) } else { body }
+}
+
+// Render one front-matter entry, or `none` when it has nothing to show -- which is how a
+// disabled outline avoids leaving an empty page behind.
+#let _front-matter-page(cfg, entry) = {
+  let e = _front-matter-entry(entry)
+
+  // An intentionally empty page: the surrounding page breaks are all it takes.
+  if e.kind == "blank" { return [] }
+
+  if e.kind == "cover-text" {
+    // The cover's text block again, through the same hook and without the logo: this page
+    // repeats what the cover says, it does not repeat the cover. The cover background
+    // comes along, because the cover text is colored for it.
+    let plain = cfg
+    plain.info.logo = none
+
+    return {
+      set page(fill: cfg.cover.bg)
+      (_hook(cfg, "cover", default-cover))(plain)
+    }
+  }
+
+  if e.kind == "outline" {
+    if not cfg.outline.enabled { return none }
+    if cfg.outline.custom != none { return cfg.outline.custom }
+
+    return _outline-entries(cfg, outline(
+      title: e.title,
+      indent: cfg.outline.indent,
+      depth: cfg.outline.depth,
+    ))
+  }
+
+  if e.kind in ("figures", "tables") {
+    return _outline-entries(cfg, outline(
+      title: if e.title == auto {
+        linguify(e.kind, from: translations-database, lang: cfg.lang)
+      } else {
+        e.title
+      },
+      target: figure.where(kind: if e.kind == "figures" { image } else { table }),
+    ))
+  }
+
+  // A section of your own: an unnumbered title, listed in the outline unless told
+  // otherwise, followed by its content.
+  if e.title != auto and e.title != none {
+    heading(level: 1, numbering: none, outlined: e.outlined, e.title)
+  }
+  _front-matter-body(cfg, e.body)
+}
+
 /**
- * Render the cover page, then the outline.
+ * Render the cover page, then the front matter.
  *
- * The cover itself comes from the `render.cover` hook; the page break, the background
- * reset and the outline stay here so a replacement cover does not have to remember them.
+ * The cover itself comes from the `render.cover` hook; the page breaks, the background
+ * reset and the front matter stay here so a replacement cover does not have to remember
+ * them. Each entry of `front-matter.pages` gets a page of its own, in the order given, and
+ * an entry with nothing to show leaves no page behind.
  *
  * @param cfg - The resolved configuration dictionary
  */
@@ -503,20 +727,16 @@
   // Reset cover background for subsequent pages
   set page(fill: none)
 
-  // Conditional outline rendering
-  if not cfg.outline.enabled {
-    // nothing
-  } else if cfg.outline.custom != none {
-    cfg.outline.custom
-  } else {
-    show outline.entry: it => {
-      if cfg.colors.outline != auto {
-        set text(fill: cfg.colors.outline)
-        link(it.element.location(), it.indented(it.prefix(), it.inner()))
-      } else {
-        link(it.element.location(), it.indented(it.prefix(), it.inner()))
-      }
+  let pages = cfg.front-matter.pages.map(e => _front-matter-page(cfg, e)).filter(p => p != none)
+
+  _front-matter-styling(cfg, {
+    for (index, rendered) in pages.enumerate() {
+      if index > 0 { pagebreak() }
+      rendered
     }
-    outline(indent: cfg.outline.indent, depth: cfg.outline.depth)
-  }
+  })
+
+  // A hard break, so that a last front-matter page which is blank stays a page of its own
+  // instead of collapsing into the body.
+  if pages.len() > 0 { pagebreak() }
 }

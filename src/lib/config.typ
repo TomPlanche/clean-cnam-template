@@ -7,7 +7,7 @@
 // modules
 #import "store.typ": default-config, get-config, get-fonts, resolve-config, set-config
 #import "components.typ": blockquote, code, my-block
-#import "layout.typ": add-decorations, apply-styling, create-title-page, no-big-title, no-numbering
+#import "layout.typ": _front-counter-shift, _front-numbering, add-decorations, apply-styling, create-title-page, no-big-title, no-numbering
 #import "utils.typ": ar, author-names, format-authors, icon, merge-dicts
 
 // Re-export components for easy access
@@ -46,7 +46,9 @@
  * - `fonts`: default, body, title, chapter, code, inline-raw, size. Each font is a
  *   `(name, weight)` dict (`chapter` also takes `size`); `auto` members cascade from
  *   `default`, or from `title` for `chapter` and from `body` for `inline-raw`.
- * - `page`: margin (top, right, bottom, left), numbering, number-align.
+ * - `page`: margin (top, right, bottom, left), numbering, number-align, numbering-from
+ *   (first page that prints a number, `auto` = the first page of the body) and
+ *   numbering-start (the number it prints, `auto` = its own position in the document).
  * - `cover`: bg, decorations, second-logo (image, scale, dx, dy), padding, spacing, and one
  *   dict per element (title, subtitle, subsubtitle, date, author) with text, color, weight,
  *   size, font and align. A `text` key overrides the matching `info` field.
@@ -54,6 +56,10 @@
  *   that give each language its own color. `auto` accent means "use the language's color".
  * - `headings`: chapter-style ("decorated" or "plain"), chapter-pagebreak, chapter-label.
  * - `outline`: enabled, custom (content rendered instead of the default outline), indent, depth.
+ * - `front-matter`: pages, the ordered list of pages between the cover and the body
+ *   ("blank", "cover-text", "outline", "figures", "tables", your own
+ *   `(title: .., body: ..)` sections, or plain content). A body may also be a
+ *   `(cfg) => content` function, called with the resolved configuration.
  * - `lang`, `print`, `color-words`.
  *
  * A theme is a partial configuration dictionary applied between the defaults and `config`,
@@ -87,8 +93,18 @@
   set document(author: author-names(cfg.info.author), title: cfg.cover.title.text)
   set text(lang: cfg.lang)
 
-  // Apply page margins and cover background (none = transparent)
-  set page(margin: cfg.page.margin, fill: cfg.cover.bg)
+  // Apply page margins and cover background (none = transparent). The numbering is only
+  // installed here when it has to start before the body; otherwise the cover and the front
+  // matter stay unnumbered and `apply-styling` starts the count on the first body page.
+  set page(
+    margin: cfg.page.margin,
+    fill: cfg.cover.bg,
+    numbering: _front-numbering(cfg),
+    number-align: cfg.page.number-align,
+  )
+
+  // On page one, so that page `page.numbering-from` prints `page.numbering-start`
+  _front-counter-shift(cfg)
 
   // Conditionally add decorative elements
   if cfg.cover.decorations {
